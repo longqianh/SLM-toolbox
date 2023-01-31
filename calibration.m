@@ -77,6 +77,7 @@ ft = fittype( 'poly5' );
 %     ft=fittype('poly1');
 [lut, res] = fit( xData, yData, ft ); % Note: polyfit 不如 fit 效果好
 disp(['fitting residual: ',num2str(res.rmse)]);
+
 slm.LUT=lut;
 save([dirname,'/lut.cfit'],'lut');
 save([dirname,'/phaseVal.mat'],'phaseVal');
