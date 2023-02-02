@@ -13,6 +13,7 @@ properties
     X
     Y
     LUT
+    dc % compensate manually
     blaze
 
 %     tcp_client
@@ -31,7 +32,6 @@ methods (Static)
             x_lut=x/(2*pi)*255;
         else
 %             disp('Use calibrated LUT.');
-            
             ps=unique(fieldnames(lut));
             n=length(ps);
             x_lut=zeros(size(x));
@@ -39,6 +39,7 @@ methods (Static)
                 p=lut.(ps(i));
                 x_lut=x_lut+p*x.^(n-i);
             end
+
         end
     end
 end
@@ -56,7 +57,7 @@ methods
         obj.init_image = zeros([slm_para.height,slm_para.width],'uint8');
         scrsz = get(0,'ScreenSize');
         obj.screen_pos = [scrsz(3) scrsz(4)-slm_para.height 1920 1080]; 
-        
+        obj.dc=0;
         if nargin>1
            obj.lambda=sys_para.wavelength;
            obj.focal=sys_para.focal;
@@ -68,7 +69,9 @@ methods
     function obj=set.LUT(obj,val)
         obj.LUT=val;
     end
-
+    function obj=set.dc(obj,val)
+        obj.dc=val;
+    end
     function obj=set.blaze(obj,val)
         obj.blaze=val;
     end
@@ -81,7 +84,7 @@ methods
     
 
     function gray_image=lut(obj,phase)
-        gray_image=round(obj.funLUT(mod(phase,2*pi),obj.LUT));        
+        gray_image=round(obj.funLUT(mod(phase+obj.dc,2*pi),obj.LUT));        
     end
     
     function gray_image=reset_image_lut(obj,image_in)
@@ -184,12 +187,13 @@ methods
                 disp('set blaze first!');
                 disp_img=img;
             else
-                disp_img=mod(double(img)+obj.blaze,256);
+                disp_img=double(img)+obj.blaze;
             end
         else 
             disp_img=img;
         end
-
+        disp_img=mod(disp_img,256);
+        
         if isempty(ishandle(findobj('type','figure','name','pluto')))
             disp('Create Pluto figure handle.');
             figure('Name','pluto','Position',obj.screen_pos,'MenuBar','none','ToolBar','none','resize','off');

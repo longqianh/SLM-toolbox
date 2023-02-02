@@ -85,13 +85,8 @@ save([dirname,'/phaseVal.mat'],'phaseVal');
 show_lut_result(grayVal_cut,phaseVal,lut,dirname);
 
 %% Evaluation: replay calibrated phase
-% lut=importdata([dirname,'/lut.cfit'],'lut');
-% lut=importdata('./data/lut.cfit','lut');
-
+% slm.dc=0.7;
 phaseGT=linspace(0,2*pi,256);
-% grayValLut=round(mod(phaseGT,2*pi)/(2*pi)*255); % linear
-% grayValLut=round(funLUT(phaseGT,lut));
-% grayValLut=mod(round(slm.lut(phaseGT-2*pi)),256);
 
 calibrated_imgs=genGrayImages(grayVal,slm.sz,'double');
 cam.start_preview();
