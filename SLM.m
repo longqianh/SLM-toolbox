@@ -159,10 +159,16 @@ methods
         end
     end
     
-    function disp_phase(obj,phase,use_blaze)
+    function disp_phase(obj,phase,use_blaze,use_padding)
         % phase: [0,2pi]
+        if nargin<3
+            use_blaze=0;
+        end
+        if nargin<4
+            use_padding=0;
+        end
         img=obj.lut(phase);
-        disp_image(img,use_blaze);
+        obj.disp_image(img,use_blaze,use_padding);
     end
 
     function disp_image(obj,image_in,use_blaze,use_padding)
