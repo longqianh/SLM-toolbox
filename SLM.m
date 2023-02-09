@@ -261,7 +261,7 @@ methods
     end
 
     % -------- FUNCTIONAL PHASE COMPUTATION --------
-    function blazedgating_phase=blazedgating(obj, Tx, Ty, T)
+    function blazedgrating_phase=blazedgrating(obj, Tx, Ty, T)
         if nargin<4
             T=1;
         end
@@ -269,11 +269,14 @@ methods
         T = T*obj.pixel_size;%闪耀光栅周期
         blazedgatingX_phase = 2*pi*mod(Tx*obj.X,T)/T;
         blazedgatingY_phase = 2*pi*mod(Ty*obj.Y,T)/T;
-        blazedgating_phase = mod(blazedgatingX_phase+blazedgatingY_phase,2*pi);
+        blazedgrating_phase = mod(blazedgatingX_phase+blazedgatingY_phase,2*pi);
     end
 
-    function defocus_phase=defocus(obj,d)
-        defocus_phase = pi*d/(obj.lambda*(obj.focal)^2)*(obj.X.^2+obj.Y.^2);
+    function defocus_phase=defocus(obj,d)  
+        y_slm = (-obj.height/2:obj.height/2-1)*obj.pixel_size;
+        [X1,Y1] = meshgrid(y_slm, y_slm);
+        defocus_phase = pi*d/(obj.lambda*(obj.focal)^2)*(X1.^2+Y1.^2);
+        defocus_phase(sqrt(X1.^2+Y1.^2)>=obj.height/2*obj.pixel_size)=0;
         defocus_phase=defocus_phase/(max(defocus_phase,[],'all'))*(2*pi);
     end
 

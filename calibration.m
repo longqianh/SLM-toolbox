@@ -1,8 +1,8 @@
 %% Initialization
 clear;clc;close all;
 addpath(genpath('./utils'));
-root='../experiments/20230131';
-name='Cali1';
+root='../experiments/20230208';
+name='Cali2';
 
 before_path=[root,'/',name,'/before'];
 if ~exist(before_path,'dir'), mkdirs(before_path); end
@@ -11,11 +11,11 @@ if ~exist(after_path,'dir'), mkdirs(after_path); end
 
 dirname=[root,'/',name];
 if ~exist(dirname,'dir'), mkdirs(dirname); end
-cam_para.ROI=[300 150 170 160];
-cam_para.exposure=0.0070;
+cam_para.ROI=[320 210 160 160];
+cam_para.exposure=0.0040;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
-cam_para.frame_rate = 30;
+cam_para.frame_rate = 60;
 cam_para.frame_delay = 10e-3;
 cam=Camera(cam_para);
 
@@ -31,7 +31,7 @@ sys_para.focal=200e-3;
 sys_para.mag_prop=1;
 sys_para.cam_pixel_size=8e-6;
 slm=SLM(slm_para,sys_para);
-slm.blaze=slm.blazedgating(-0.04,-0.23,1)/(2*pi)*255;
+slm.blaze=slm.blazedgrating(-0.2,-0.2,1)/(2*pi)*255;
 slm.disp_image(slm.init_image,1);
 %% Before Calibration
 
@@ -57,10 +57,10 @@ cam.stop_preview();
 phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
-xRange=25:125;
-yRange=70:90;
+xRange=40:110;
+yRange=45:80;
 y0=yRange(round(length(yRange/2)));
-startPoint=[0 0 0 0.63]; % use curve fitting tool to determine
+startPoint=[0 0 0 0.83]; % use curve fitting tool to determine
 phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,before_path);
 save([dirname,'/phase_shift_ori.mat'],'phases');
 

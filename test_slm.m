@@ -8,13 +8,13 @@ slm_para.pixel_size=8e-6;
 
 sys_para.wavelength=532e-9;
 sys_para.cam_pixel_size=8e-6;
-sys_para.focal=200e-3;
+sys_para.focal=180e-3;
 sys_para.mag_prop=1;
 sys_para.cam_pixel_size=8e-6;
 
 slm=SLM(slm_para,sys_para);      
-slm.blaze=slm.blazedgating(0,-0.2,1)/(2*pi)*255;
-slm.LUT=importdata('./data/lut.cfit');
+slm.blaze=slm.blazedgrating(-0.2,-0.2,1)/(2*pi)*255;
+% slm.LUT=importdata('./data/lut.cfit');
 slm.disp_image(slm.init_image,1,1);
 
 %% image display
