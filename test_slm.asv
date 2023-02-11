@@ -12,7 +12,7 @@ sys_para.focal=180e-3;
 sys_para.mag_prop=1;
 sys_para.cam_pixel_size=8e-6;
 slm=SLM(slm_para,sys_para);      
-slm.blaze=slm.blazedgrating(0.1,0,0.2)/(2*pi)*255;
+slm.blaze=slm.blazedgrating(0.1,0,0.2)/(2*pi)*128;
 % slm.LUT=importdata('./data/lut.cfit');
 slm.disp_image(slm.init_image,1,1);
 
