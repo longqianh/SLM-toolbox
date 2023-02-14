@@ -1,2 +1,6 @@
 
+*.asv
 data/zerseq.mat
+*.csv
+*.txt
+*.lut

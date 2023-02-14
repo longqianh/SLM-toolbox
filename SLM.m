@@ -15,6 +15,7 @@ properties
     LUT
     dc % compensate manually
     blaze
+%     bit 
 
 %     tcp_client
 %     tcp_server % not used yet
@@ -56,7 +57,7 @@ methods
         obj.pixel_size = slm_para.pixel_size;
         obj.init_image = zeros([slm_para.height,slm_para.width],'uint8');
         scrsz = get(0,'ScreenSize');
-        obj.screen_pos = [scrsz(3) scrsz(4)-slm_para.height 1920 1080]; 
+        obj.screen_pos = [scrsz(3) scrsz(4)-slm_para.height slm_para.width slm_para.height]; 
         obj.dc=0;
         if nargin>1
            obj.lambda=sys_para.wavelength;
@@ -120,9 +121,9 @@ methods
          end
     end
 
-     function image_out=image_resample(obj,image_in,mag,verbose)
+     function image_out=image_resample(obj,image_in,mag,mag2,verbose)
         % image resample for GS
-        if nargin<4
+        if nargin<5
             verbose=0;
         end
         % mag_prop: magnification between SLM and obj-lens back focal plane
@@ -134,10 +135,17 @@ methods
         end
         [h,w] = size(target) ; L = max(h,w); L_mag=L/mag;
         target = imresize(target,[L_mag,L_mag]);
+        
+        h = L_mag; w = L_mag;
+        target2 = zeros(h,w);
+        target3 = imresize(target,[floor(h*mag2) floor(w*mag2)]);
+        target2((h-floor(h*mag2))/2+1:(h+floor(h*mag2))/2,(w-floor(w*mag2))/2+1:(w+floor(w*mag2))/2) = target3;
+        target = target2;
+
         % 重采样，用像面坐标x_im重新描述图样
         dx_im = obj.lambda*obj.focal/(obj.pixel_size*N)/obj.mag_prop;
         
-        xc2 = ceil(-L_mag/2 : L_mag/2-1)*obj.cam_pixel_size;
+        xc2 = ceil(-L_mag/2 : L_mag/2-1).*obj.cam_pixel_size;
         [Xc2, Yc2] = meshgrid(xc2); %-1 保持边界一致
         
         Nc = floor(obj.cam_pixel_size*(L_mag-1)/dx_im);
@@ -266,7 +274,9 @@ methods
             T=1;
         end
         
-        T = T*obj.pixel_size;%闪耀光栅周期
+        T = T*obj.pixel_size; % 闪耀光栅周期
+%         blazedgatingX_phase = 2*pi*mod(obj.X,Tx)/Tx;
+%         blazedgatingY_phase = 2*pi*mod(obj.Y,Ty)/Ty;
         blazedgatingX_phase = 2*pi*mod(Tx*obj.X,T)/T;
         blazedgatingY_phase = 2*pi*mod(Ty*obj.Y,T)/T;
         blazedgrating_phase = mod(blazedgatingX_phase+blazedgatingY_phase,2*pi);

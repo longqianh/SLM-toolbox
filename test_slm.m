@@ -2,20 +2,22 @@
 clc;clear;close all;
 slm_para.height=1080;
 slm_para.width=1920;
-slm_para.fresh_time=0.06;
+slm_para.fresh_time=1/60;
 slm_para.pixel_size=8e-6;
-% save('./data/slm_pluto.mat','slm_para');
+% save('./data/slm_pluto.mat','slm_para');           
 
 sys_para.wavelength=532e-9;
 sys_para.cam_pixel_size=8e-6;
-sys_para.focal=180e-3;
+sys_para.focal=180-3;
 sys_para.mag_prop=1;
 sys_para.cam_pixel_size=8e-6;
 slm=SLM(slm_para,sys_para);      
-slm.blaze=slm.blazedgrating(0.1,0,0.2)/(2*pi)*255;
+slm.blaze=slm.blazedgrating(1,0,40)/(2*pi)*255;
 % slm.LUT=importdata('./data/lut.cfit');
 slm.disp_image(slm.init_image,1,1);
-
+%%
+phi=zeros(slm.height,slm.width);
+% phi()
 %% image display
 close all;
 img=imread('./data/vortex_6_19.bmp');

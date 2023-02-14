@@ -1,8 +1,8 @@
 %% Initialization
 clear;clc;close all;
 addpath(genpath('./utils'));
-root='../experiments/20230208';
-name='Cali2';
+root='../experiments/202302013';
+name='Cali1';
 
 before_path=[root,'/',name,'/before'];
 if ~exist(before_path,'dir'), mkdirs(before_path); end
@@ -11,9 +11,9 @@ if ~exist(after_path,'dir'), mkdirs(after_path); end
 
 dirname=[root,'/',name];
 if ~exist(dirname,'dir'), mkdirs(dirname); end
-cam_para.ROI=[320 210 160 160];
-cam_para.exposure=0.0040;
-cam_para.gain=0;
+cam_para.ROI=[320 200 300 10];
+cam_para.exposure=1/60;
+cam_para.gain=2;
 cam_para.trigger_frames=10;
 cam_para.frame_rate = 60;
 cam_para.frame_delay = 10e-3;
@@ -21,7 +21,7 @@ cam=Camera(cam_para);
 
 slm_para.height=1080;
 slm_para.width=1920;
-slm_para.fresh_time=0.06;
+slm_para.fresh_time=1/60;
 slm_para.pixel_size=8e-6;
 % save('./data/slm_pluto.mat','slm_para');
 
@@ -31,8 +31,8 @@ sys_para.focal=200e-3;
 sys_para.mag_prop=1;
 sys_para.cam_pixel_size=8e-6;
 slm=SLM(slm_para,sys_para);
-slm.blaze=slm.blazedgrating(-0.2,-0.2,1)/(2*pi)*255;
-slm.disp_image(slm.init_image,1);
+slm.blaze=slm.blazedgrating(1,0,4)/(2*pi)*255;
+slm.disp_image(slm.init_image,1,1);
 %% Before Calibration
 
 
@@ -44,6 +44,7 @@ for i=1:length(loaded_imgs)
     savePath=[before_path,'/',num2str(i-1)];
     disp(['(before) image: ',num2str(i-1)]);
     slm.disp_image(loaded_imgs{i},1);
+    pause(0.2);
     cam.capture(savePath);
 end
 cam.stop_preview();
@@ -57,10 +58,10 @@ cam.stop_preview();
 phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
-xRange=40:110;
+xRange=80:160;
 yRange=45:80;
 y0=yRange(round(length(yRange/2)));
-startPoint=[0 0 0 0.83]; % use curve fitting tool to determine
+startPoint=[0 0 0 0.549778714378214]; % use curve fitting tool to determine
 phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,before_path);
 save([dirname,'/phase_shift_ori.mat'],'phases');
 
@@ -73,7 +74,7 @@ phaseVal=unwrap(phases);
 %     grayVal=grayVal(1:length(phases));
 grayVal_cut=grayVal(1:end);
 [xData, yData] = prepareCurveData( phaseVal, grayVal_cut );
-ft = fittype( 'poly5' );
+ft = fittype( 'poly3' );
 %     ft=fittype('poly1');
 [lut, res] = fit( xData, yData, ft ); % Note: polyfit 不如 fit 效果好
 disp(['fitting residual: ',num2str(res.rmse)]);
@@ -165,14 +166,4 @@ function eval_cali_result(phaseGT,phase_aftercali,savedir)
     xlabel('Phase Groundtruth','interpreter','latex');
     ylabel('Phase Value / radian','interpreter','latex');
     print([savedir,'/corrected_result'],'-dpng','-r400');
-end
-
-function x_lut=funLUT(x,lut)
-    ps=unique(fieldnames(lut));
-    n=length(ps);
-    x_lut=zeros(size(x));
-    for i=1:n
-        p=lut.(ps(i));
-        x_lut=x_lut+p*x.^(n-i);
-    end
 end
