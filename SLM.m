@@ -4,25 +4,15 @@ properties
     width {mustBeInteger}
     pixel_size
     fresh_time
-    screen_pos
     init_image
-    lambda
-    focal
-    cam_pixel_size
-    mag_prop
-    X
-    Y
-    LUT
-    dc % compensate manually
     blaze
-%     bit 
-
-%     tcp_client
-%     tcp_server % not used yet
+    LUT
 
 end
 properties (Dependent)
     sz % size
+    X
+    Y
 end
 
 methods (Static)
@@ -45,47 +35,64 @@ methods (Static)
     end
 end
 
+methods (Abstract)
+    disp_image(obj,image_in,use_blaze,use_padding);
+
+end
 methods
-	function obj = SLM(slm_para,sys_para)
+	function obj = SLM(slm_para)
 		obj.height = slm_para.height;
 		obj.width = slm_para.width;
-        x_slm = (-slm_para.width/2:slm_para.width/2-1)*slm_para.pixel_size;  
-        y_slm = (-slm_para.height/2:slm_para.height/2-1)*slm_para.pixel_size; 
-        [obj.X,obj.Y] = meshgrid(x_slm, y_slm);
-       
-        obj.fresh_time=slm_para.fresh_time;
         obj.pixel_size = slm_para.pixel_size;
+
+        if isprop(slm_para,'fresh_time')
+            obj.fresh_time=slm_para.fresh_time;
+        else
+            obj.fresh_time=1; % 1s
+        end
+        
         obj.init_image = zeros([slm_para.height,slm_para.width],'uint8');
-        scrsz = get(0,'ScreenSize');
-        obj.screen_pos = [scrsz(3) scrsz(4)-slm_para.height slm_para.width slm_para.height]; 
-        obj.dc=0;
-        if nargin>1
-           obj.lambda=sys_para.wavelength;
-           obj.focal=sys_para.focal;
-           obj.cam_pixel_size=sys_para.cam_pixel_size;
-           obj.mag_prop=sys_para.mag_prop;
+        if isprop(slm_para,'LUT')
+            obj.LUT=slm_para.LUT;
+        else
+            obj.LUT=[];
+        end
+        if isprop(slm_para,'blaze')
+            obj.blaze=slm_para.blaze;
+        else 
+            obj.blaze=[];
         end
     end
 	
     function obj=set.LUT(obj,val)
         obj.LUT=val;
     end
-    function obj=set.dc(obj,val)
-        obj.dc=val;
-    end
+
+
     function obj=set.blaze(obj,val)
         obj.blaze=val;
     end
 
-    function size=get.sz(obj)
-        size = [obj.height,obj.width];
+    function sz=get.sz(obj)
+        sz = [obj.height,obj.width];
     end
 
+    function X=get.X(obj)
+        x_slm = (-obj.width/2:obj.width/2-1)*obj.pixel_size;  
+        y_slm = (-obj.height/2:obj.height/2-1)*obj.pixel_size; 
+        [X,~] = meshgrid(x_slm, y_slm);
+    end
+
+    function Y=get.Y(obj)
+        x_slm = (-obj.width/2:obj.width/2-1)*obj.pixel_size;  
+        y_slm = (-obj.height/2:obj.height/2-1)*obj.pixel_size; 
+        [~,Y] = meshgrid(x_slm, y_slm);
+    end
+    
     % -------- DISPLAY --------
     
-
     function gray_image=lut(obj,phase)
-        gray_image=round(obj.funLUT(mod(phase+obj.dc,2*pi),obj.LUT));        
+        gray_image=round(obj.funLUT(mod(phase,2*pi),obj.LUT));        
     end
     
     function gray_image=reset_image_lut(obj,image_in)
@@ -121,51 +128,6 @@ methods
          end
     end
 
-     function image_out=image_resample(obj,image_in,mag,mag2,verbose)
-        % image resample for GS
-        if nargin<5
-            verbose=0;
-        end
-        % mag_prop: magnification between SLM and obj-lens back focal plane
-%         cam_pixel_size = 6e-3; %CCD像元尺寸
-        N=obj.height;
-        target =rot90(image_in,2); % fliplr(flipud())
-        if length(size(target))==3
-            target=squeeze(mean(target,3));
-        end
-        [h,w] = size(target) ; L = max(h,w); L_mag=L/mag;
-        target = imresize(target,[L_mag,L_mag]);
-        
-        h = L_mag; w = L_mag;
-        target2 = zeros(h,w);
-        target3 = imresize(target,[floor(h*mag2) floor(w*mag2)]);
-        target2((h-floor(h*mag2))/2+1:(h+floor(h*mag2))/2,(w-floor(w*mag2))/2+1:(w+floor(w*mag2))/2) = target3;
-        target = target2;
-
-        % 重采样，用像面坐标x_im重新描述图样
-        dx_im = obj.lambda*obj.focal/(obj.pixel_size*N)/obj.mag_prop;
-        
-        xc2 = ceil(-L_mag/2 : L_mag/2-1).*obj.cam_pixel_size;
-        [Xc2, Yc2] = meshgrid(xc2); %-1 保持边界一致
-        
-        Nc = floor(obj.cam_pixel_size*(L_mag-1)/dx_im);
-        x_imt = ceil(-Nc/2 : Nc/2-1)*dx_im;[X_imT, Y_imT] = meshgrid(x_imt);% Nc缩小一些,x_imt边界不能大于xc2，否则NaN
-        
-        if L_mag*obj.cam_pixel_size > dx_im*N
-            fprintf('Warning: Pattern too big!!');
-        end
-        
-        target = interp2(Xc2,Yc2,target,X_imT,Y_imT,'cubic');
-        image_out = zeros(obj.height,obj.width);
-        loc_h = floor((obj.height-Nc)/2+1) : floor((obj.height+Nc)/2);
-        loc_w = floor((obj.width-Nc)/2+1) : floor((obj.width+Nc)/2);
-        image_out(loc_h, loc_w) = target;
-        image_out = image_out - (image_out<0).*image_out;% 由于差值带来的小于0的地方补回0
-        image_out = image_out/max(max(image_out)); % 插值后归一
-        if verbose
-            figure('Color','White');imshow(image_out,[]);
-        end
-    end
     
     function disp_phase(obj,phase,use_blaze,use_padding)
         % phase: [0,2pi]
@@ -178,63 +140,74 @@ methods
         img=obj.lut(phase);
         obj.disp_image(img,use_blaze,use_padding);
     end
-
-    function disp_image(obj,image_in,use_blaze,use_padding)
-        if nargin<3
-            use_blaze=0;
-        end
-        if nargin<4
-            use_padding=0;
-        end
-
-        if ~isempty(obj.LUT)
-            img=obj.reset_image_lut(image_in);
-        else
-            img=image_in;
-        end
-        if use_padding
-            img=obj.image_padding(img);
-        end
-
-        if use_blaze % the blaze stored is already img
-            if isempty(obj.blaze)
-                disp('set blaze first!');
-                disp_img=img;
-            else
-                disp_img=double(img)+obj.blaze;
-            end
-        else 
-            disp_img=img;
-        end
-        disp_img=mod(disp_img,256);
-        
-        if isempty(ishandle(findobj('type','figure','name','pluto')))
-            disp('Create Pluto figure handle.');
-            figure('Name','pluto','Position',obj.screen_pos,'MenuBar','none','ToolBar','none','resize','off');
-            image(disp_img);
-            colormap(gray(256));
-            axis off; 
-            set(gca,'units','normalized','position',[0 0 1 1],'Visible','off');
-        else
-            image(gca,disp_img);
-        end
-
-        disp('Image displayed on SLM.');
-    end
-
-    function disp_image_seq(obj,imgs,interval_time)
-        if nargin<3
-            interval_time=obj.fresh_time;
-        end
-        for i=1:length(imgs)
-            disp(['display image: ',num2str(i)]);
-            disp_image(obj,imgs{i});
-            pause(interval_time);
-        end
-        
-    end
-		
+% 
+%     function disp_image_seq(obj,imgs,interval_time)
+%         if nargin<3
+%             interval_time=obj.fresh_time;
+%         end
+%         for i=1:length(imgs)
+%             disp(['display image: ',num2str(i)]);
+%             disp_image(obj,imgs{i});
+%             pause(interval_time);
+%         end
+%         
+%     end
+% 		
     % -------- HOLOGRAPHY COMPUTATION --------
+
+     function image_out=image_resample(obj,image_in,mag,sys_para)
+        % image resample for GS
+        arguments
+            obj
+            image_in
+            mag
+            sys_para.lambda 
+            sys_para.cam_pixel_size
+            sys_para.mag_prop
+            sys_para.focal
+        end
+        % mag_prop: magnification between SLM and obj-lens back focal plane
+
+        N=obj.height;
+        target =rot90(image_in,2); % fliplr(flipud())
+        if length(size(target))==3
+            target=squeeze(mean(target,3));
+        end
+        [h,w] = size(target) ;
+        L = max(h,w); 
+        L_mag=L*mag;
+%         target = imresize(target,[L_mag,L_mag]);
+        
+%         h = L_mag; w = L_mag;
+        target2 = zeros(h,w);
+        target3 = imresize(target,[floor(h*mag) floor(w*mag)]);
+        target2((h-floor(h*mag))/2+1:(h+floor(h*mag))/2,(w-floor(w*mag))/2+1:(w+floor(w*mag))/2) = target3;
+        target = target2;
+
+        % 重采样，用像面坐标x_im重新描述图样
+        dx_im = sys_para.lambda*sys_para.focal/(obj.pixel_size*N)/sys_para.mag_prop;
+        
+        xc2 = ceil(-L_mag/2 : L_mag/2-1).*sys_para.cam_pixel_size;
+        [Xc2, Yc2] = meshgrid(xc2); %-1 保持边界一致
+        
+        Nc = floor(obj.cam_pixel_size*(L_mag-1)/dx_im);
+        x_imt = ceil(-Nc/2 : Nc/2-1)*dx_im;
+        [X_imT, Y_imT] = meshgrid(x_imt); % Nc缩小一些,x_imt边界不能大于xc2，否则NaN
+        
+        if L_mag*obj.cam_pixel_size > dx_im*N
+            fprintf('Warning: Pattern too big!!');
+        end
+        
+        target = interp2(Xc2,Yc2,target,X_imT,Y_imT,'cubic');
+        image_out = zeros(obj.height,obj.width);
+        loc_h = floor((obj.height-Nc)/2+1) : floor((obj.height+Nc)/2);
+        loc_w = floor((obj.width-Nc)/2+1) : floor((obj.width+Nc)/2);
+        image_out(loc_h, loc_w) = target;
+        image_out = image_out - (image_out<0).*image_out;% 由于差值带来的小于0的地方补回0
+        image_out = image_out/max(max(image_out)); % 插值后归一
+
+     end
+
     function phase=GS(obj,image_in,iter_num,verbose)
 
         if nargin<3
@@ -270,13 +243,13 @@ methods
 
     % -------- FUNCTIONAL PHASE COMPUTATION --------
     function blazedgrating_phase=blazedgrating(obj, Tx, Ty, T)
+        % Tx: whether use x direction grating
+        % Ty: whether use y direction grating
         if nargin<4
             T=1;
         end
         
         T = T*obj.pixel_size; % 闪耀光栅周期
-%         blazedgatingX_phase = 2*pi*mod(obj.X,Tx)/Tx;
-%         blazedgatingY_phase = 2*pi*mod(obj.Y,Ty)/Ty;
         blazedgatingX_phase = 2*pi*mod(Tx*obj.X,T)/T;
         blazedgatingY_phase = 2*pi*mod(Ty*obj.Y,T)/T;
         blazedgrating_phase = mod(blazedgatingX_phase+blazedgatingY_phase,2*pi);
@@ -291,7 +264,7 @@ methods
     end
 
    % -------- CONNECTION/COMMUNICATION --------
-
+   % waiting.       
    
 end
 end
