@@ -1,94 +1,40 @@
-%% cam
+%% init slm
 clear;clc;close all;
 addpath(genpath('./utils'));
-root='../experiments/202302014';
-name='Meadowlark-Cali5-1_2';
+root='../experiments/202302015';
+name='Cali1';
+lib_dir = './utils/meadowlark_sdk/';
+slm_para.height=1152;
+slm_para.width=1920;
+slm_para.fresh_time=1.18e-3;
+slm_para.pixel_size=9.2e-6;
+slm_para.bit_depth = 12;
+slm_para.is_nematic_type = 1;
+slm_para.RAM_write_enable = 1;
+slm_para.use_GPU = 0;
+slm_para.max_transients  = 10;
+% lut_path=strcat(lib_dir,'linear.lut');
+lut_path=strcat(lib_dir,'slm4633_at532.lut');
+slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
+slm.disp_image(slm.init_image,0,0);
 
-before_path=[root,'/',name,'/before'];
-if ~exist(before_path,'dir'), mkdirs(before_path); end
-after_path=[root,'/',name,'/after'];
-if ~exist(after_path,'dir'), mkdirs(after_path); end
-
-dirname=[root,'/',name];
-if ~exist(dirname,'dir'), mkdirs(dirname); end
-cam_para.ROI=[200 280 200 120];
-cam_para.exposure=0.0008 ;
+%% load bz
+PixelValue = 0;
+PixelsPerStripe = 4;
+blaze=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
+Gray=120;
+calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
+blaze=reshape(blaze.Value,slm.sz);
+slm.blaze=double(blaze);
+slm.disp_image(slm.init_image,1,1);
+%% init cam
+cam_para.ROI=[320 200 300 10];
+cam_para.exposure=0.0015;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
 cam_para.frame_rate = 60;
 cam_para.frame_delay = 10e-3;
 cam=Camera(cam_para);
-%% slm
-calllib('Blink_C_wrapper', 'Delete_SDK');
-%destruct
-if libisloaded('Blink_C_wrapper')
-    unloadlibrary('Blink_C_wrapper');
-end
-
-slm_para.height=1152;
-slm_para.width=1920;
-slm_para.pixel_size=9.2e-6;
-slm_para.fresh_time=1/30;
-% sys_para.wavelength=532e-9;
-% sys_para.cam_pixel_size=8e-6;
-% sys_para.mag_prop=1; 
-% sys_para.focal=200e-3;
-slm=SLM(slm_para); 
-
-lib_dir = './utils/meadowlark_sdk/';
-C_wrapper_path = strcat(lib_dir,"Blink_C_wrapper.dll");
-C_wrapper_h_path = strcat(lib_dir,"Blink_C_wrapper.h");
-
-%load dll
-if ~libisloaded(C_wrapper_path)
-    loadlibrary(C_wrapper_path,C_wrapper_h_path);
-end
-
-% This loads the image generation functions
-if ~libisloaded('ImageGen')
-    loadlibrary('ImageGen.dll', 'ImageGen.h');
-end
-
-% Basic parameters for calling Create_SDK
-bit_depth = 12;
-num_boards_found = libpointer('uint32Ptr', 0);
-constructed_okay = libpointer('int32Ptr', 0);
-is_nematic_type = 1;
-RAM_write_enable = 1;
-use_GPU = 0;
-max_transients  = 10;
-wait_For_Trigger = 0; % This feature is user-settable; use 1 for 'on' or 0 for 'off'
-external_Pulse = 0;
-timeout_ms = 5000;
-
-
-
-% In your program you should use the path to your custom LUT as opposed to linear LUT
-lut_file = strcat(lib_dir,'532.LUT');
-% lut_file=strcat(lib_dir,'calibraPCIe1064.LUT');
-reg_lut = libpointer('string');
-
-% Call the constructor
-calllib('Blink_C_wrapper', 'Create_SDK', bit_depth, num_boards_found, constructed_okay, is_nematic_type, RAM_write_enable, use_GPU, max_transients, reg_lut);
-
-
-if constructed_okay.value ~= 0  
-    disp('Blink SDK was not successfully constructed');
-    disp(calllib('Blink_C_wrapper', 'Get_last_error_message'));
-    calllib('Blink_C_wrapper', 'Delete_SDK');
-else
-    board_number = 1;
-    disp('Blink SDK was successfully constructed');
-    fprintf('Found %u SLM controller(s)\n', num_boards_found.value);
-end
-
-% load a LUT 
-% calllib('Blink_C_wrapper', 'Load_linear_LUT',board_number);
-calllib('Blink_C_wrapper', 'Load_LUT_file',board_number, lut_file);
-% disp("load LUT successfully.");
-
-calllib('Blink_C_wrapper', 'Write_image', board_number, slm.init_image, slm.width*slm.height, wait_For_Trigger, external_Pulse, timeout_ms);
-calllib('Blink_C_wrapper', 'ImageWriteComplete', board_number, timeout_ms); 
 
 %% Before Calibration
 
@@ -99,9 +45,9 @@ loaded_imgs=genGrayImages(grayVal,slm.sz,'double');
 for i=1:length(loaded_imgs)
     savePath=[before_path,'/',num2str(i-1)];
     disp(['(before) image: ',num2str(i-1)]);
-%     slm.disp_image(loaded_imgs{i},1);
-    calllib('Blink_C_wrapper', 'Write_image', board_number, rot90(loaded_imgs{i}), prod(slm.sz), wait_For_Trigger, external_Pulse, timeout_ms);
-    calllib('Blink_C_wrapper', 'ImageWriteComplete', board_number, timeout_ms); 
+    slm.disp_image(loaded_imgs{i},1,1);
+%     calllib('Blink_C_wrapper', 'Write_image', board_number, rot90(loaded_imgs{i}), prod(slm.sz), wait_For_Trigger, external_Pulse, timeout_ms);
+%     calllib('Blink_C_wrapper', 'ImageWriteComplete', board_number, timeout_ms); 
     pause(0.2);
     cam.capture(savePath);
 end
@@ -154,9 +100,7 @@ pause(1);
 for i=1:length(calibrated_imgs)
     savePath=[after_path,'/',num2str(i-1)];
     disp(['(after) image: ',num2str(i-1)]);
-%     slm.disp_image(calibrated_imgs{i},1);
-    calllib('Blink_C_wrapper', 'Write_image', board_number, rot90(calibrated_imgs{i}), prod(slm.sz), wait_For_Trigger, external_Pulse, timeout_ms);
-    calllib('Blink_C_wrapper', 'ImageWriteComplete', board_number, timeout_ms);
+    slm.disp_image(calibrated_imgs{i},1,1);
     pause(0.2);
     cam.capture(savePath);
 end
@@ -177,7 +121,7 @@ if libisloaded('Blink_C_wrapper')
     unloadlibrary('Blink_C_wrapper');
 end
 %% functions
-
+% todo: integrate into SLM class
 function gray_imgs=genGrayImages(grayVal,sz,mode)
     n=length(grayVal);
     gray_imgs=cell(n,1);

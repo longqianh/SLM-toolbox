@@ -59,7 +59,8 @@ methods
         ret=construct_sdk(obj);
         if ret, obj.board_number=1; end
         obj.load_lut(obj.board_number,lut_path);
-
+%       height = calllib('Blink_C_wrapper', 'Get_image_height', board_number);
+%       width = calllib('Blink_C_wrapper', 'Get_image_width', board_number);
     end
     
     function ret=construct_sdk(obj)
@@ -93,15 +94,25 @@ methods
         obj.board_number=val;
     end
 
+%     function blazedgrating_phase=blazedgrating(obj, T, PixelValue, Gray)
+%         % Tx: whether use x direction grating
+%         % Ty: whether use y direction grating
+%         if nargin<4
+%             T=1;
+%         end
+%         img = libpointer('uint8Ptr', zeros(prod(obj.sz),1));
+%         calllib('ImageGen', 'Generate_Stripe', img, obj.width, obj.height, PixelValue, Gray, T);
+%     end
+
     function disp_image(obj,image_in,use_blaze,use_padding,options)
         arguments
             obj
             image_in
-            use_blaze (1,1) boolean = true
-            use_padding (1,1) boolean = true
-            options.wait_for_trigger (1,1) boolean = false
-            options.external_pulse (1,1) boolean = false
-            options.timout_ms (1,1) double = 5000
+            use_blaze (1,1) = true
+            use_padding (1,1) = true
+            options.wait_for_trigger (1,1) = false
+            options.external_pulse (1,1) = false
+            options.timeout_ms (1,1) = 5000
         end
 
         if ~isempty(obj.LUT)

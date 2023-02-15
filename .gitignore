@@ -4,3 +4,7 @@ data/zerseq.mat
 *.csv
 *.txt
 *.lut
+test_meadowlark_slm.m
+output/*
+calib_meadowlark_slm.m
+calib_meadowlark_slm.m

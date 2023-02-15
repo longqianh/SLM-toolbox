@@ -23,7 +23,7 @@ classdef Camera
         imaqreset;
         vid = videoinput('tisimaq_r2013_64', 1, 'Y16 (752x480)');
         vid.FramesPerTrigger = cam_para.trigger_frames;
-        obj.wait_time=cam_para.trigger_frames*(1/cam_para.frame_rate+cam_para.frame_delay)+0.1;
+        obj.wait_time=cam_para.trigger_frames*(1/cam_para.frame_rate+cam_para.frame_delay);
         vid.ReturnedColorspace = 'grayscale';
         vid.ROIPosition = obj.ROI;
         
