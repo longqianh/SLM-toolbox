@@ -22,7 +22,7 @@ slm_para.is_nematic_type = 1;
 slm_para.RAM_write_enable = 1;
 slm_para.use_GPU = 0;
 slm_para.max_transients = 10;
-lut_path='./output/slm4633_at532.lut';
+lut_path='C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\LUT Files\1920x1152_linearVoltage.lut';
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
 
 PixelValue = 0;
@@ -32,7 +32,33 @@ Gray=120;
 calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
 blaze=reshape(blaze.Value,slm.sz);
 slm.blaze=double(blaze);
+slm.disp_image(slm.init_image,0,1);
+
+%% Meadowlark SLM (HDMI)
+% lib_dir = './utils/meadowlarkhdmi_sdk/';
+lib_dir = 'C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\SDK\';
+lut_path='C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\SDK\19x12_8bit_linearVoltage.lut';
+slm_para.height=1200;
+slm_para.width=1920;
+slm_para.RGB=1;
+slm_para.depth=8;
+slm_para.pixel_size=9.2e-6; 
+slm_para.bCppOrPython=false; 
+slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
+
+PixelValueOne = 0;
+PixelValueTwo = 50;
+PixelsPerStripe=2;
+WFC = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
+img_g_p = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
+calllib('ImageGen', 'Generate_Stripe', img_g_p, WFC, slm.width, slm.height, slm.depth, PixelValueOne, 255-PixelValueTwo, PixelsPerStripe, slm.RGB);
+blaze=reshape(img_g_p.Value,[slm.sz,3]);
+
+slm.blaze=double(blaze);
+% slm.disp_image(slm.init_image,0,1); % bug here
 slm.disp_image(slm.init_image,1,1);
+ 
+% slm.clear_sdk();
 %% image display
 close all;
 img=imread('./data/vortex_6_19.bmp');

@@ -2,7 +2,7 @@
 % clear;clc;close all;
 addpath(genpath('./utils'));
 root='../experiments/202302015';
-name='Cali2';
+name='Cali1';
 
 before_path=[root,'/',name,'/before'];
 if ~exist(before_path,'dir'), mkdirs(before_path); end
@@ -46,6 +46,10 @@ slm_para.max_transients  = 10;
 lut_path=strcat(lib_dir,'slm4633_at532.lut');
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
 % slm.disp_image(slm.init_image,0,0);
+
+% Meadowlark-HDMI
+
+
 
 PixelValue = 0;
 PixelsPerStripe = 4;

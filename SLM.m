@@ -2,6 +2,7 @@ classdef SLM
 properties
     height {mustBeInteger}
     width {mustBeInteger}
+    depth
     pixel_size
     fresh_time
     init_image
@@ -43,6 +44,7 @@ methods
 	function obj = SLM(slm_para)
 		obj.height = slm_para.height;
 		obj.width = slm_para.width;
+        
         obj.pixel_size = slm_para.pixel_size;
 
         if isprop(slm_para,'fresh_time')
