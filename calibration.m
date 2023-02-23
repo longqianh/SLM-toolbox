@@ -1,8 +1,8 @@
 %% Initialize Cam
 % clear;clc;close all;
 addpath(genpath('./utils'));
-root='../experiments/202302015';
-name='Cali1';
+root='../experiments/20232023';
+name='Cali5';
 
 before_path=[root,'/',name,'/before'];
 if ~exist(before_path,'dir'), mkdirs(before_path); end
@@ -11,8 +11,8 @@ if ~exist(after_path,'dir'), mkdirs(after_path); end
 
 dirname=[root,'/',name];
 if ~exist(dirname,'dir'), mkdirs(dirname); end
-cam_para.ROI=[180 80 130 150];
-cam_para.exposure=0.003;
+cam_para.ROI=[380 220 180 120];
+cam_para.exposure=0.0001;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
 cam_para.frame_rate = 60;
@@ -29,36 +29,45 @@ cam=Camera(cam_para);
 % 
 % slm=HoloeyeSLM(slm_para);
 % slm.blaze=slm.blazedgrating(1,0,4)/(2*pi)*255;
-% slm.disp_image(slm.init_image,1,1);
 
 % Meadowlark
-lib_dir = './utils/meadowlark_sdk/';
-slm_para.height=1152;
-slm_para.width=1920;
-slm_para.fresh_time=1.18e-3;
-slm_para.pixel_size=9.2e-6;
-slm_para.bit_depth = 12;
-slm_para.is_nematic_type = 1;
-slm_para.RAM_write_enable = 1;
-slm_para.use_GPU = 0;
-slm_para.max_transients  = 10;
+% lib_dir = './utils/meadowlark_sdk/';
+% slm_para.height=1152;
+% slm_para.width=1920;
+% slm_para.fresh_time=1.18e-3;
+% slm_para.pixel_size=9.2e-6;
+% slm_para.bit_depth = 12;
+% slm_para.is_nematic_type = 1;
+% slm_para.RAM_write_enable = 1;
+% slm_para.use_GPU = 0;
+% slm_para.max_transients  = 10;
 % lut_path=strcat(lib_dir,'linear.lut');
-lut_path=strcat(lib_dir,'slm4633_at532.lut');
-slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
+% lut_path=strcat(lib_dir,'slm4633_at532.lut');
+% slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
+% PixelValue = 0;
+% PixelsPerStripe = 4;
+% blaze=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
+% Gray=120;
+% calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
+% blaze=reshape(blaze.Value,slm.sz);
+% slm.blaze=double(blaze);
 % slm.disp_image(slm.init_image,0,0);
 
 % Meadowlark-HDMI
-
-
-
-PixelValue = 0;
-PixelsPerStripe = 4;
-blaze=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
-Gray=120;
-calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
-blaze=reshape(blaze.Value,slm.sz);
-slm.blaze=double(blaze);
+lib_dir = './utils/meadowlarkhdmi_sdk/';
+lut_path='./utils/meadowlarkhdmi_sdk/19x12_8bit_linearVoltage.lut';
+slm_para.height=1200;
+slm_para.width=1920;
+slm_para.RGB=1;
+slm_para.depth=8;
+slm_para.pixel_size=9.2e-6; 
+slm_para.bCppOrPython=false; 
+slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
+slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*105;
+% slm.LUT=importdata('./data/lut.cfit');
 slm.disp_image(slm.init_image,1,1);
+% slm.clear_sdk();
+
 
 %% Before Calibration
 % grayVal=(1:10:255)';
@@ -68,8 +77,8 @@ loaded_imgs=genGrayImages(grayVal,slm.sz,'double');
 for i=1:length(loaded_imgs)
     savePath=[before_path,'/',num2str(i-1)];
     disp(['(before) image: ',num2str(i-1)]);
-    slm.disp_image(loaded_imgs{i},1);
-    pause(0.2);
+    slm.disp_image(loaded_imgs{i},1,1);
+    pause(0.06);
     cam.capture(savePath);
 end
 cam.stop_preview();
@@ -77,16 +86,17 @@ cam.stop_preview();
 %% Phase Retrivel: pre-load
 % to determine x/y range uncomment the following
 % img=cap_imgs{1};imshow(img);
+% image(img,'CDataMapping','scaled');
 % ySLM = mean(double(img(y0,xRange)),1);
 % xSLM= 1:length(ySLM);
 
 phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
-xRange=23:110;
-yRange=60:80;
-y0=yRange(round(length(yRange/2)));
-startPoint=[0 0 0 0.549778714378214]; % use curve fitting tool to determine
+xRange=50:120;
+yRange=51:74;
+y0=yRange(round(length(yRange)/2));
+startPoint=[0 0 0 0.25]; % use curve fitting tool to determine
 phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,before_path);
 save([dirname,'/phase_shift_ori.mat'],'phases');
 
@@ -95,11 +105,14 @@ plot(phases);hold on;
 plot(unwrap(phases));
 legend('original phase','unwrapped phase');
 phaseVal=unwrap(phases);
-
+%%
 %     grayVal=grayVal(1:length(phases));
-grayVal_cut=grayVal(1:end);
-[xData, yData] = prepareCurveData( phaseVal, grayVal_cut );
-ft = fittype( 'poly4' );
+grayVal=(0:255)'; 
+one_lambda_range=1:60;
+grayVal_cut=grayVal(one_lambda_range);
+phaseVal_cut=phaseVal(one_lambda_range);
+[xData, yData] = prepareCurveData( phaseVal_cut-phaseVal_cut(1), grayVal_cut );
+ft = fittype( 'poly5' );
 %     ft=fittype('poly1');
 [lut, res] = fit( xData, yData, ft ); % Note: polyfit 不如 fit 效果好
 disp(['fitting residual: ',num2str(res.rmse)]);
@@ -108,19 +121,21 @@ slm.LUT=lut;
 save([dirname,'/lut.cfit'],'lut');
 save([dirname,'/phaseVal.mat'],'phaseVal');
 
-show_lut_result(grayVal_cut,phaseVal,lut,dirname);
+show_lut_result(grayVal_cut,phaseVal_cut-phaseVal_cut(1),lut,dirname);
 
 %% Evaluation: replay calibrated phase
 % slm.dc=0.7;
-phaseGT=linspace(0,2*pi,256);
+phaseGT=linspace(0,2*pi,length(grayVal_cut));
+calibrated_imgs=genGrayImages(grayVal_cut,slm.sz,'double');
 
-calibrated_imgs=genGrayImages(grayVal,slm.sz,'double');
 cam.start_preview();
+slm.disp_image(slm.init_image,1,1);
 pause(1);
 for i=1:length(calibrated_imgs)
     savePath=[after_path,'/',num2str(i-1)];
     disp(['(after) image: ',num2str(i-1)]);
-    slm.disp_image(calibrated_imgs{i},1);
+    slm.disp_image(calibrated_imgs{i},1,1);
+    pause(0.06);
     cam.capture(savePath);
 end
 cam.stop_preview();

@@ -10,7 +10,7 @@ function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath)
     ySLM = mean(double(img(yRange,xRange)),1);
     ySLM=smoothdata(ySLM);
     xSLM= 1:length(ySLM);
-    y0=yRange(round(length(yRange/2)));
+    y0=yRange(round(length(yRange)/2));
 
     [xData, yData] = prepareCurveData( xSLM, ySLM );
     % Set up fittype and options.
@@ -24,7 +24,8 @@ function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath)
     startPoint=[fitresult.a0, fitresult.a1, fitresult.b1, fitresult.w];
     if verbose
         figure('Color','White');
-        imshow(img,[]);
+%         imshow(img,[]);
+        image(img,'CDataMapping','scaled');
         line([1 size(img,2)],[y0 y0],'Color','cyan');
 %         print([path,'/slm_cali_strip'],'-dpng','-r400');
         figure('Color','White');
@@ -120,7 +121,8 @@ function show_phase_shift(imgs,y0,savepath)
         disp(i);
         img=imgs{i};
         cmp(y0+1:end,:)=img(y0+1:end,:);
-        imshow(cmp,[]);
+%         imshow(cmp,[]);
+        image(cmp,'CDataMapping','scaled'); % when imshow failed
         m(i+1)=getframe(fig);
         writeVideo(writerObj,m(i+1));
     end

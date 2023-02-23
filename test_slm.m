@@ -46,15 +46,17 @@ slm_para.pixel_size=9.2e-6;
 slm_para.bCppOrPython=false; 
 slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
 
-PixelValueOne = 0;
-PixelValueTwo = 50;
-PixelsPerStripe=2;
-WFC = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
-img_g_p = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
-calllib('ImageGen', 'Generate_Stripe', img_g_p, WFC, slm.width, slm.height, slm.depth, PixelValueOne, 255-PixelValueTwo, PixelsPerStripe, slm.RGB);
-blaze=reshape(img_g_p.Value,[slm.sz,3]);
+% 普通光栅分不出调制级！
+% PixelValueOne = 0;
+% PixelValueTwo = 200;
+% PixelsPerStripe=2;
+% WFC = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
+% img_g_p = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
+% calllib('ImageGen', 'Generate_Stripe', img_g_p, WFC, slm.width, slm.height, slm.depth, PixelValueOne, 255-PixelValueTwo, PixelsPerStripe, slm.RGB);
+% blaze=reshape(img_g_p.Value,[slm.sz,3]);
 
-slm.blaze=double(blaze);
+% blaze_angle=100; % 1~255
+slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*100; 
 % slm.disp_image(slm.init_image,0,1); % bug here
 slm.disp_image(slm.init_image,1,1);
  
@@ -62,7 +64,7 @@ slm.disp_image(slm.init_image,1,1);
 %% image display
 close all;
 img=imread('./data/vortex_6_19.bmp');
-slm.disp_image(img,1,1);
+slm.disp_image(img,0,1);
 
 %% holography display 
 
@@ -75,6 +77,6 @@ sys_para.cam_pixel_size=8e-6;
 close all;
 star_img=imread('./data/star.png');
 mag=2;
-img_in=slm.image_resample(star_img,mag,sys_para);
+img_in=slm.image_resample(star_img,mag,sys_para); % bug here
 star_phase=slm.GS(img_in,20);
 slm.disp_phase(star_phase,1,1);
