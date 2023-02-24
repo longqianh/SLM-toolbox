@@ -54,9 +54,9 @@ slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
 % img_g_p = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
 % calllib('ImageGen', 'Generate_Stripe', img_g_p, WFC, slm.width, slm.height, slm.depth, PixelValueOne, 255-PixelValueTwo, PixelsPerStripe, slm.RGB);
 % blaze=reshape(img_g_p.Value,[slm.sz,3]);
-
+%%
 % blaze_angle=100; % 1~255
-slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*100; 
+slm.blaze=slm.blazedgrating(1,0,8)/(2*pi)*80; 
 % slm.disp_image(slm.init_image,0,1); % bug here
 slm.disp_image(slm.init_image,1,1);
  
@@ -64,7 +64,7 @@ slm.disp_image(slm.init_image,1,1);
 %% image display
 close all;
 img=imread('./data/vortex_6_19.bmp');
-slm.disp_image(img,0,1);
+slm.disp_image(img,1,1);
 
 %% holography display 
 

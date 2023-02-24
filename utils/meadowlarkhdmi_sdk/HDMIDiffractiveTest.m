@@ -1,6 +1,6 @@
 addpath(genpath('./utils'));
-root='../Experiments/20232023/';
-name='Diffractive-Cali3';
+root='../Experiments/20232024/';
+name='Diffractive-Cali1';
 
 before_path=[root,'/',name,'/before/'];
 if ~exist(before_path,'dir'), mkdirs(before_path); end
@@ -10,7 +10,7 @@ if ~exist(after_path,'dir'), mkdirs(after_path); end
 dirname=[root,name];
 if ~exist(dirname,'dir'), mkdirs(dirname); end
 %% cam
-cam_para.ROI=[370 230 150 100];
+cam_para.ROI=[450 200 200 150];
 cam_para.exposure=0.0001;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
@@ -42,7 +42,7 @@ calllib('ImageGen', 'Generate_Stripe', img_g_p, WFC, slm.width, slm.height, slm.
 grating=reshape(img_g_p.Value,[slm.sz,3]);
 slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*105;
 
-slm.disp_image(grating,1,1);
+slm.disp_image(slm.init_image,1,1);
 % slm.disp_image(grating,0,1);
 
 %%

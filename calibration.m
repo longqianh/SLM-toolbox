@@ -1,8 +1,8 @@
 %% Initialize Cam
 % clear;clc;close all;
 addpath(genpath('./utils'));
-root='../experiments/20232023';
-name='Cali5';
+root='../experiments/20232024';
+name='Cali6-base-123';
 
 before_path=[root,'/',name,'/before'];
 if ~exist(before_path,'dir'), mkdirs(before_path); end
@@ -11,7 +11,7 @@ if ~exist(after_path,'dir'), mkdirs(after_path); end
 
 dirname=[root,'/',name];
 if ~exist(dirname,'dir'), mkdirs(dirname); end
-cam_para.ROI=[380 220 180 120];
+cam_para.ROI=[320 160 160 160];
 cam_para.exposure=0.0001;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
@@ -64,7 +64,7 @@ slm_para.depth=8;
 slm_para.pixel_size=9.2e-6; 
 slm_para.bCppOrPython=false; 
 slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
-slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*105;
+slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*70;
 % slm.LUT=importdata('./data/lut.cfit');
 slm.disp_image(slm.init_image,1,1);
 % slm.clear_sdk();
@@ -73,7 +73,7 @@ slm.disp_image(slm.init_image,1,1);
 %% Before Calibration
 % grayVal=(1:10:255)';
 grayVal=(0:255)'; 
-loaded_imgs=slm.cali_genimgs(grayVal,'mode','double');
+loaded_imgs=slm.cali_genimgs(grayVal,'mode','double','base',123);
 
 for i=1:length(loaded_imgs)
     savePath=[before_path,'/',num2str(i-1)];
@@ -94,10 +94,10 @@ cam.stop_preview();
 phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
-xRange=50:120;
-yRange=51:74;
+xRange=53:110;
+yRange=65:75;
 y0=yRange(round(length(yRange)/2));
-startPoint=[0 0 0 0.25]; % use curve fitting tool to determine
+startPoint=[0 0 0 0.85]; % use curve fitting tool to determine
 phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,before_path);
 save([dirname,'/phase_shift_ori.mat'],'phases');
 
@@ -109,7 +109,8 @@ phaseVal=unwrap(phases);
 %%
 %     grayVal=grayVal(1:length(phases));
 grayVal=(0:255)'; 
-one_lambda_range=1:60;
+% one_lambda_range=25:73;
+one_lambda_range=73:187;
 grayVal_cut=grayVal(one_lambda_range);
 phaseVal_cut=phaseVal(one_lambda_range);
 [xData, yData] = prepareCurveData( phaseVal_cut-phaseVal_cut(1), grayVal_cut );
@@ -127,15 +128,17 @@ show_lut_result(grayVal_cut,phaseVal_cut-phaseVal_cut(1),lut,dirname);
 %% Evaluation: replay calibrated phase
 % slm.dc=0.7;
 phaseGT=linspace(0,2*pi,length(grayVal_cut));
-calibrated_imgs=slm.cali_genimgs(grayVal_cut,'mode','double');
+eval_phases=slm.cali_genimgs(phaseGT,'mode','double','base',pi);
 
 cam.start_preview();
-slm.disp_image(slm.init_image,1,1);
+% slm.disp_image(slm.init_image,1,1);
+slm.disp_phase(eval_phases{1},1,1);
 pause(1);
-for i=1:length(calibrated_imgs)
+for i=1:length(eval_phases)
     savePath=[after_path,'/',num2str(i-1)];
     disp(['(after) image: ',num2str(i-1)]);
-    slm.disp_image(calibrated_imgs{i},1,1);
+    slm.disp_phase(eval_phases{i},1,1);
+    
     pause(0.06);
     cam.capture(savePath);
 end

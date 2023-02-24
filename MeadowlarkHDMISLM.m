@@ -80,16 +80,17 @@ methods
 % depth = calllib('Blink_C_wrapper', 'Get_Depth');
     end
 
-    function disp_image(obj,image_in,use_blaze,use_padding)
+    function disp_image(obj,image_in,use_blaze,use_padding,from_phase)
         arguments
             obj
             image_in
             use_blaze (1,1) = true
             use_padding (1,1) = true
+            from_phase (1,1) = false
 %             is_8_bit (1,1) = true % false if use RGB
         end
 
-        if ~isempty(obj.LUT)
+        if ~isempty(obj.LUT) && ~from_phase
             img=obj.reset_image_lut(image_in);
         else
             img=image_in;

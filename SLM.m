@@ -143,7 +143,7 @@ methods
             use_padding=0;
         end
         img=obj.lut(phase);
-        obj.disp_image(img,use_blaze,use_padding);
+        obj.disp_image(img,use_blaze,use_padding,1);
     end
 % 
 %     function disp_image_seq(obj,imgs,interval_time)
@@ -273,18 +273,20 @@ methods
        arguments
            obj
            grayVal = 0:2^obj.depth-1
-           options.mode = "double"
+           options.mode = "double"  
+           options.base = 0
            options.sz
        end
-       if isprop(options.sz), img_sz=options.sz; else, img_sz=obj.sz; end
+       if isprop(options,'sz'), img_sz=options.sz; else, img_sz=obj.sz; end
        n=length(grayVal);
        gray_imgs=cell(n,1);
        for i=1:n
-            if mode=="whole"
-                gray_imgs{i}=grayVal(i)*ones(img_sz,'uint8');
-            elseif mode=="double"
-                tmp=zeros(img_sz,'uint8');
+            if options.mode=="whole"
+                gray_imgs{i}=grayVal(i)*ones(img_sz,'double');
+            elseif options.mode=="double"
+                tmp=zeros(img_sz,'double');
                 tmp(:,1:round(img_sz(2)/2))=grayVal(i);
+                tmp(:,round(img_sz(2)/2)+1:end)=options.base;
                 gray_imgs{i}=tmp;
             end
         end
