@@ -1,4 +1,4 @@
-%% initialize SLM
+%% Initialize SLM
 clc;clear;close all;
 lib_dir = './utils/meadowlark_sdk/';
 slm_para.height=1152;
@@ -14,7 +14,7 @@ slm_para.max_transients  = 10;
 lut_path='./output/slm4633_at532.lut';
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
 slm.disp_image(slm.init_image,0,0);
-%%
+%% Set blaze
 % slm.blaze=slm.blazedgrating(1,0,4)/(2*pi)*255;
 PixelValue = 0;
 PixelsPerStripe = 4;
@@ -24,7 +24,7 @@ calllib('ImageGen', 'Generate_Stripe', Image, slm.width, slm.height, 0, Gray, Pi
 Image=reshape(Image.Value,slm.sz);
 slm.disp_image(Image,0,1);
 
-%% initialize camera
+%% Initialize camera
 cam_para.ROI=[220 100 100 100];
 cam_para.exposure=0.0015;
 cam_para.gain=0;
@@ -33,7 +33,7 @@ cam_para.frame_rate = 90;
 cam_para.frame_delay = 0.1;
 cam=Camera(cam_para);
 
-%%  
+%% Main process 
 %set some dimensions
 NumDataPoints = 256;
 NumRegions = 1;
@@ -92,5 +92,5 @@ end
 figure('Color','White');
 plot(AI_Intensities(:,2));
 
-%% clear sdk
+%% Clear sdk
 slm.clear_sdk();

@@ -13,6 +13,6 @@ calllib('ImageGen', 'Generate_Random',a2, WFC, slm.width, slm.height, slm.depth,
 % calllib('ImageGen', 'Generate_Stripe', a2, WFC, slm.width, slm.height, slm.depth, PixelValueOne, 255-PixelValueTwo, 64, 0);
 a2=reshape(a2.Value,slm.sz);
 
-a3=slm.gray2rgb(a2);
+a3=slm.encodeRGB(a2);
 
 sum(abs(a3-double(a1)),'all')

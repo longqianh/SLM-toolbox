@@ -44,12 +44,13 @@ cam=Camera(cam_para);
 % lut_path=strcat(lib_dir,'linear.lut');
 % lut_path=strcat(lib_dir,'slm4633_at532.lut');
 % slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
-% PixelValue = 0;
-% PixelsPerStripe = 4;
-% blaze=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
-% Gray=120;
-% calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
-% blaze=reshape(blaze.Value,slm.sz);
+% % PixelValue = 0;
+% % PixelsPerStripe = 4;
+% % blaze=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
+% % Gray=120;
+% % calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
+% % blaze=reshape(blaze.Value,slm.sz);
+% slm.blaze=slm.blazedgrating(1,0,32)/(2*pi)*105;
 % slm.blaze=double(blaze);
 % slm.disp_image(slm.init_image,0,0);
 
@@ -72,7 +73,7 @@ slm.disp_image(slm.init_image,1,1);
 %% Before Calibration
 % grayVal=(1:10:255)';
 grayVal=(0:255)'; 
-loaded_imgs=genGrayImages(grayVal,slm.sz,'double');
+loaded_imgs=slm.cali_genimgs(grayVal,'mode','double');
 
 for i=1:length(loaded_imgs)
     savePath=[before_path,'/',num2str(i-1)];
@@ -126,7 +127,7 @@ show_lut_result(grayVal_cut,phaseVal_cut-phaseVal_cut(1),lut,dirname);
 %% Evaluation: replay calibrated phase
 % slm.dc=0.7;
 phaseGT=linspace(0,2*pi,length(grayVal_cut));
-calibrated_imgs=genGrayImages(grayVal_cut,slm.sz,'double');
+calibrated_imgs=slm.cali_genimgs(grayVal_cut,'mode','double');
 
 cam.start_preview();
 slm.disp_image(slm.init_image,1,1);
@@ -147,21 +148,12 @@ calibrated_phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,after_path);
 
 eval_cali_result(phaseGT',calibrated_phases,dirname);
 
+%% Unload
+% slm.clear_sdk();
+
 %% functions
 
-function gray_imgs=genGrayImages(grayVal,sz,mode)
-    n=length(grayVal);
-    gray_imgs=cell(n,1);
-    for i=1:n
-        if mode=="whole"
-            gray_imgs{i}=grayVal(i)*ones(sz,'uint8');
-        elseif mode=="double"
-            tmp=zeros(sz,'uint8');
-            tmp(:,1:round(sz(2)/2))=grayVal(i);
-            gray_imgs{i}=tmp;
-        end
-    end
-end
+
 
 function imgs=load_imgs(dirname,phase_index)
 

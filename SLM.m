@@ -2,7 +2,7 @@ classdef SLM
 properties
     height {mustBeInteger}
     width {mustBeInteger}
-    depth
+    depth {mustBeInteger} = 8
     pixel_size
     fresh_time
     init_image
@@ -44,9 +44,12 @@ methods
 	function obj = SLM(slm_para)
 		obj.height = slm_para.height;
 		obj.width = slm_para.width;
-        
         obj.pixel_size = slm_para.pixel_size;
 
+        if isprop(slm_para,'depth')
+            obj.depth = slm_para.depth;
+        end
+        
         if isprop(slm_para,'fresh_time')
             obj.fresh_time=slm_para.fresh_time;
         else
@@ -264,6 +267,28 @@ methods
         defocus_phase(sqrt(X1.^2+Y1.^2)>=obj.height/2*obj.pixel_size)=0;
         defocus_phase=defocus_phase/(max(defocus_phase,[],'all'))*(2*pi);
     end
+
+   % -------- CALIBRATION
+   function gray_imgs=cali_genimgs(obj,grayVal,options)
+       arguments
+           obj
+           grayVal = 0:2^obj.depth-1
+           options.mode = "double"
+           options.sz
+       end
+       if isprop(options.sz), img_sz=options.sz; else, img_sz=obj.sz; end
+       n=length(grayVal);
+       gray_imgs=cell(n,1);
+       for i=1:n
+            if mode=="whole"
+                gray_imgs{i}=grayVal(i)*ones(img_sz,'uint8');
+            elseif mode=="double"
+                tmp=zeros(img_sz,'uint8');
+                tmp(:,1:round(img_sz(2)/2))=grayVal(i);
+                gray_imgs{i}=tmp;
+            end
+        end
+   end
 
    % -------- CONNECTION/COMMUNICATION --------
    % waiting.       

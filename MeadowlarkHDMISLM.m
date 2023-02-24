@@ -8,7 +8,7 @@ end
 % end
 methods (Static)
 
-    function img_rgb=gray2rgb(img_gray) % encodeRGB
+    function img_rgb=encodeRGB(img_gray) % encodeRGB
         N=numel(img_gray);
         img_rgb=zeros(3*N,1);
         img_rgb(3*(1:N))=zeros(size(img_gray));
@@ -18,7 +18,7 @@ methods (Static)
     end
 
     % BUG here
-    function img_gray=rgb2gray(img_rgb) % decodeRGB
+    function img_gray=decodeRGB(img_rgb) % decodeRGB
         N=size(img_rgb,1)*size(img_rgb,2);
 %         img_rgb=reshape(img_rgb,3*N,1);
         img_gray=img_rgb(3*(1:N)-2);
@@ -70,14 +70,12 @@ methods
     function obj=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path)
         obj=obj@SLM(slm_para);
         obj.RGB=slm_para.RGB;
-        obj.depth=slm_para.depth;
+%         obj.depth=slm_para.depth;
         obj.lib_dir=lib_dir;        
         obj.load_libs(lib_dir);
         obj.construct_sdk(slm_para.bCppOrPython);
         obj.load_lut(lut_path);
-%         if slm_para.RGB
-%             obj.init_image = zeros([slm_para.height,slm_para.width,3],'uint8');
-%         end
+
 % height = calllib('Blink_C_wrapper', 'Get_Height');
 % depth = calllib('Blink_C_wrapper', 'Get_Depth');
     end
@@ -113,7 +111,7 @@ methods
         if obj.RGB
             is_8_bit=false;
             if length(size(img_pad))==2
-                img_pad = obj.gray2rgb(img_pad);
+                img_pad = obj.encodeRGB(img_pad);
             end
         else
             is_8_bit=true;
@@ -125,7 +123,7 @@ methods
                 disp_img=img_pad;
             else
                 if obj.RGB && length(size(obj.blaze))~=3
-                    obj.blaze=obj.gray2rgb(obj.blaze);
+                    obj.blaze=obj.encodeRGB(obj.blaze);
                 end
                 disp_img=double(img_pad)+obj.blaze;
             end
@@ -137,13 +135,6 @@ methods
 
     end
     
-%      function sz=get.sz(obj)
-%         if obj.RGB
-%             sz = [obj.height,obj.width,3];
-%         else
-%             sz = [obj.height,obj.width];
-%         end
-%     end
 end
 
 end
