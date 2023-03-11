@@ -104,41 +104,46 @@ methods
 %         calllib('ImageGen', 'Generate_Stripe', img, obj.width, obj.height, PixelValue, Gray, T);
 %     end
 
-    function disp_image(obj,image_in,use_blaze,use_padding,options)
+    function disp_image(obj,image_in,use_blaze,use_padding,from_phase,options)
         arguments
             obj
             image_in
             use_blaze (1,1) = true
             use_padding (1,1) = true
+            from_phase = false
             options.wait_for_trigger (1,1) = false
             options.external_pulse (1,1) = false
             options.timeout_ms (1,1) = 5000
         end
 
-        if ~isempty(obj.LUT)
-            img=obj.reset_image_lut(image_in);
+        if ~from_phase
+            img=obj.compute_phaseimg(image_in/255*2*pi,use_blaze,use_padding);
         else
             img=image_in;
         end
+%         if use_padding
+%             image_in=obj.image_padding(image_in);
+%         end
+% 
+%         if use_blaze
+%             if isempty(obj.blaze)
+%                 disp('no blaze added, set blaze first.');
+%                 img=image_in;
+%             else
+%                 img=double(image_in)+obj.blaze;
+%             end
+%         else
+%             img=image_in;
+%         end
+%         
+%         if ~isempty(obj.LUT) && ~from_phase
+%             img=obj.reset_image_lut(img);
+%         end
 
-        if use_padding
-            img=obj.image_padding(img);
-        end
 
-        if use_blaze
-            if isempty(obj.blaze)
-                disp('no blaze added, set blaze first.');
-                disp_img=img;
-            else
-                disp_img=double(img)+obj.blaze;
-            end
-        else 
-            disp_img=img;
-        end
-        disp_img=mod(disp_img,256);
-       
+%         imshow(disp_img,[])
         calllib('Blink_C_wrapper', 'Write_image', obj.board_number,...
-            rot90(disp_img), prod(obj.sz), options.wait_for_trigger, options.external_pulse, options.timeout_ms);
+            rot90(mod(img,256)), prod(obj.sz), options.wait_for_trigger, options.external_pulse, options.timeout_ms);
         calllib('Blink_C_wrapper', 'ImageWriteComplete', obj.board_number, options.timeout_ms); 
         disp('Image displayed on Meadowlark SLM.');
     end

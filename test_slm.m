@@ -23,17 +23,13 @@ slm_para.RAM_write_enable = 1;
 slm_para.use_GPU = 0;
 slm_para.max_transients = 10;
 lut_path='C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\LUT Files\1920x1152_linearVoltage.lut';
-slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
-
-PixelValue = 0;
-PixelsPerStripe = 4;
-blaze=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
-Gray=120;
-calllib('ImageGen', 'Generate_Stripe', blaze, slm.width, slm.height, PixelValue, Gray, PixelsPerStripe);
-blaze=reshape(blaze.Value,slm.sz);
+% lut_path=strcat(lib_dir,'slm4644_532.lut');
+slm=MeadowlarkSLM(slm_para,lib_dir,lut_path);
+%%
+blaze=slm.blazedgrating(1,0,8)/(2*pi)*220;
 slm.blaze=double(blaze);
-slm.disp_image(slm.init_image,0,1);
-
+slm.disp_image(slm.init_image,1,1);
+ 
 %% Meadowlark SLM (HDMI)
 % lib_dir = './utils/meadowlarkhdmi_sdk/';
 lib_dir = 'C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\SDK\';
@@ -45,18 +41,8 @@ slm_para.depth=8;
 slm_para.pixel_size=9.2e-6; 
 slm_para.bCppOrPython=false; 
 slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
-
-% 普通光栅分不出调制级！
-% PixelValueOne = 0;
-% PixelValueTwo = 200;
-% PixelsPerStripe=2;
-% WFC = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
-% img_g_p = libpointer('uint8Ptr', zeros(prod(slm.sz)*3,1));
-% calllib('ImageGen', 'Generate_Stripe', img_g_p, WFC, slm.width, slm.height, slm.depth, PixelValueOne, 255-PixelValueTwo, PixelsPerStripe, slm.RGB);
-% blaze=reshape(img_g_p.Value,[slm.sz,3]);
-%%
 % blaze_angle=100; % 1~255
-slm.blaze=slm.blazedgrating(1,0,8)/(2*pi)*80; 
+slm.blaze=slm.blazedgrating(-1,0,4)/(2*pi)*240; 
 % slm.disp_image(slm.init_image,0,1); % bug here
 slm.disp_image(slm.init_image,1,1);
  
@@ -76,7 +62,7 @@ sys_para.cam_pixel_size=8e-6;
 
 close all;
 star_img=imread('./data/star.png');
-mag=2;
-img_in=slm.image_resample(star_img,mag,sys_para); % bug here
+mag=0.5;
+img_in=slm.image_resample(star_img,mag); % bug here
 star_phase=slm.GS(img_in,20);
 slm.disp_phase(star_phase,1,1);

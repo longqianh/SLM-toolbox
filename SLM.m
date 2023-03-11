@@ -6,7 +6,7 @@ properties
     pixel_size
     fresh_time
     init_image
-    blaze
+    blaze % should be phase
     LUT
 
 end
@@ -133,17 +133,32 @@ methods
          end
     end
 
-    
-    function disp_phase(obj,phase,use_blaze,use_padding)
-        % phase: [0,2pi]
+    function phaseimg=compute_phaseimg(obj,phase,use_blaze,use_padding)
         if nargin<3
             use_blaze=0;
         end
         if nargin<4
             use_padding=0;
         end
-        img=obj.lut(phase);
-        obj.disp_image(img,use_blaze,use_padding,1);
+         
+        if use_padding
+            phase=obj.image_padding(phase);
+        end
+        
+        if use_blaze
+            if isempty(obj.blaze)
+                disp('no blaze added, set blaze first.');
+            else
+                phase=double(phase)+obj.blaze;
+            end
+        end
+        phaseimg=obj.lut(mod(phase,2*pi));
+    end
+
+    function disp_phase(obj,phase,use_blaze,use_padding)
+        % phase: [0,2pi]
+        phaseimg=obj.compute_phaseimg(phase,use_blaze,use_padding);
+        obj.disp_image(phaseimg,0,0,1);
     end
 % 
 %     function disp_image_seq(obj,imgs,interval_time)
@@ -166,10 +181,10 @@ methods
             obj
             image_in
             mag
-            sys_para.lambda 
-            sys_para.cam_pixel_size
-            sys_para.mag_prop
-            sys_para.focal
+            sys_para.lambda = 532e-9
+            sys_para.cam_pixel_size = 8e-6;
+            sys_para.mag_prop = 1;
+            sys_para.focal = 300e-3;
         end
         % mag_prop: magnification between SLM and obj-lens back focal plane
 
@@ -195,11 +210,11 @@ methods
         xc2 = ceil(-L_mag/2 : L_mag/2-1).*sys_para.cam_pixel_size;
         [Xc2, Yc2] = meshgrid(xc2); %-1 保持边界一致
         
-        Nc = floor(obj.cam_pixel_size*(L_mag-1)/dx_im);
+        Nc = floor(sys_para.cam_pixel_size*(L_mag-1)/dx_im);
         x_imt = ceil(-Nc/2 : Nc/2-1)*dx_im;
         [X_imT, Y_imT] = meshgrid(x_imt); % Nc缩小一些,x_imt边界不能大于xc2，否则NaN
         
-        if L_mag*obj.cam_pixel_size > dx_im*N
+        if L_mag*sys_para.cam_pixel_size > dx_im*N
             fprintf('Warning: Pattern too big!!');
         end
         
@@ -287,6 +302,11 @@ methods
                 tmp=zeros(img_sz,'double');
                 tmp(:,1:round(img_sz(2)/2))=grayVal(i);
                 tmp(:,round(img_sz(2)/2)+1:end)=options.base;
+                gray_imgs{i}=tmp;
+            elseif options.mode=="double-rev"
+                tmp=zeros(img_sz,'double');
+                tmp(:,1:round(img_sz(2)/2))=options.base;
+                tmp(:,round(img_sz(2)/2)+1:end)=grayVal(i);
                 gray_imgs{i}=tmp;
             end
         end

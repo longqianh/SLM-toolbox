@@ -10,10 +10,11 @@ slm_para.is_nematic_type = 1;
 slm_para.RAM_write_enable = 1;
 slm_para.use_GPU = 0;
 slm_para.max_transients  = 10;
-% lut_path=strcat(lib_dir,'linear.lut');
-lut_path='./output/slm4633_at532.lut';
-slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
-slm.disp_image(slm.init_image,0,0);
+lut_path=strcat(lib_dir,'linear.lut');
+% lut_path='./output/slm4633_at532.lut';
+slm=MeadowlarkSLM(slm_para,lib_dir,lut_path);
+
+slm.disp_image(slm.init_image,0,1);
 %% Set blaze
 % slm.blaze=slm.blazedgrating(1,0,4)/(2*pi)*255;
 PixelValue = 0;
@@ -25,11 +26,11 @@ Image=reshape(Image.Value,slm.sz);
 slm.disp_image(Image,0,1);
 
 %% Initialize camera
-cam_para.ROI=[220 100 100 100];
-cam_para.exposure=0.0015;
+cam_para.ROI=[200 100 100 100];
+cam_para.exposure=0.003;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
-cam_para.frame_rate = 90;
+cam_para.frame_rate = 60;
 cam_para.frame_delay = 0.1;
 cam=Camera(cam_para);
 
@@ -43,13 +44,8 @@ Image = libpointer('uint8Ptr', zeros(prod(slm.sz),1));
 
 % Create an array to hold measurements from the analog input (AI) board
 AI_Intensities = zeros(NumDataPoints,2);
-
-% Generate a blank wavefront correction image, you should load your
-% custom wavefront correction that was shipped with your SLM.
-
-calllib('ImageGen', 'Generate_Solid', Image, slm.width, slm.height, PixelValue);
-calllib('Blink_C_wrapper', 'Write _image', slm.board_number, Image, prod(slm.sz), 0, 0, 5000);
-calllib('Blink_C_wrapper', 'ImageWriteComplete', slm.board_number, 5000);
+slm.disp_image(slm.init_image,0,1);
+pause(1);
 
 %loop through each region
 for Region = 0:(NumRegions-1)
@@ -64,7 +60,7 @@ for Region = 0:(NumRegions-1)
 %         figure('Color','White');
 %         imshow(img,[]);
         %write the image
-        slm.disp_image(img,0,0);
+        slm.disp_image(img,0,1);
 %         calllib('Blink_C_wrapper', 'Write_image', slm.board_number, Image, prod(slm.sz), slm.wait_for_trigger, slm.external_pulse, slm.timeout_ms);
 %         calllib('Blink_C_wrapper', 'Write_image', slm.board_number, Image, prod(slm.sz), 0, 0, 5000);
         

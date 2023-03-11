@@ -124,6 +124,7 @@ function show_phase_shift(imgs,y0,savepath)
 %         imshow(cmp,[]);
         image(cmp,'CDataMapping','scaled'); % when imshow failed
         m(i+1)=getframe(fig);
+%         pause(0.1)
         writeVideo(writerObj,m(i+1));
     end
     close(writerObj);

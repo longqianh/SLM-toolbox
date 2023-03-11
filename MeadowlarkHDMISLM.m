@@ -84,55 +84,87 @@ methods
         arguments
             obj
             image_in
-            use_blaze (1,1) = true
-            use_padding (1,1) = true
+            use_blaze (1,1) = false
+            use_padding (1,1) = false
             from_phase (1,1) = false
-%             is_8_bit (1,1) = true % false if use RGB
+%             is_8_bit (1,1) = true % false if use RGB 
         end
+    
+        if length(size(image_in))==2
+            if ~from_phase
+                img=obj.compute_phaseimg(image_in/255*2*pi,use_blaze,use_padding);
+            else
+                img=image_in;
+            end
+            if obj.RGB
+                img=obj.encodeRGB(img);
+            end
 
-        if ~isempty(obj.LUT) && ~from_phase
-            img=obj.reset_image_lut(image_in);
-        else
-            img=image_in;
-        end
-
-        if use_padding
-            if obj.RGB && length(size(img))==3
+        elseif length(size(image_in))==3
+            % in case in input RGB phaseimg from the SDK
+            % 
+            if use_padding
                 img_pad=zeros(obj.height,obj.width,3);
                 for i=1:3
-                    img_pad(:,:,i)=obj.image_padding(squeeze(img(:,:,i)));
+                    img_pad(:,:,i)=obj.image_padding(squeeze(image_in(:,:,i)));
                 end
-            else 
-                img_pad=obj.image_padding(img);
-            end
-        else
-            img_pad=img;
-        end
-        
-        if obj.RGB
-            is_8_bit=false;
-            if length(size(img_pad))==2
-                img_pad = obj.encodeRGB(img_pad);
-            end
-        else
-            is_8_bit=true;
-        end
-        
-        if use_blaze
-            if isempty(obj.blaze)
-                disp('no blaze added, set blaze first.');
-                disp_img=img_pad;
             else
-                if obj.RGB && length(size(obj.blaze))~=3
-                    obj.blaze=obj.encodeRGB(obj.blaze);
-                end
-                disp_img=double(img_pad)+obj.blaze;
+                img_pad=image_in;
             end
-        else 
-            disp_img=img_pad;
+            if use_blaze
+                if isempty(obj.blaze)
+                    disp('no blaze added, set blaze first.');
+                    img=img_pad;
+                end
+            else
+                obj.blaze_rgbimg=obj.encodeRGB(obj.lut(obj.blaze));
+                img=obj.reset_image_lut(img_pad)+obj.blaze_rgbimg;
+            end
+
         end
-        disp_img=mod(disp_img,256);
-        calllib('Blink_C_wrapper', 'Write_image', mod((disp_img),2^obj.depth), is_8_bit);
+%         if ~isempty(obj.LUT) && ~from_phase
+%             img=obj.reset_image_lut(image_in);
+%         else
+%             img=image_in;
+%         end
+% 
+%         if use_padding
+%             if obj.RGB && length(size(img))==3
+%                 img_pad=zeros(obj.height,obj.width,3);
+%                 for i=1:3
+%                     img_pad(:,:,i)=obj.image_padding(squeeze(img(:,:,i)));
+%                 end
+%             else 
+%                 img_pad=obj.image_padding(img);
+%             end
+%         else
+%             img_pad=img;
+%         end
+%         
+%         if obj.RGB
+%             is_8_bit=false;
+%             if length(size(img_pad))==2
+%                 img_pad = obj.encodeRGB(img_pad);
+%             end
+%         else
+%             is_8_bit=true;
+%         end
+%         
+%         if use_blaze
+%             if isempty(obj.blaze)
+%                 disp('no blaze added, set blaze first.');
+%                 disp_img=img_pad;
+%             else
+%                 if obj.RGB && length(size(obj.blaze))~=3
+%                     obj.blaze=obj.encodeRGB(obj.blaze);
+%                 end
+%                 disp_img=double(img_pad)+obj.blaze;
+%             end
+%         else 
+%             disp_img=img_pad;
+%         end
+%         disp_img=mod(disp_img,256);
+        calllib('Blink_C_wrapper', 'Write_image', mod(img,2^obj.depth), ~obj.RGB);
 
     end
     
