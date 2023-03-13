@@ -26,10 +26,11 @@ lut_path='C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\LUT Files\1920x1152
 % lut_path=strcat(lib_dir,'slm4644_532.lut');
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path);
 %%
-blaze=slm.blazedgrating(1,0,8)/(2*pi)*220;
+blaze=slm.blazedgrating(1,0,3)*1;% 220/255;
 slm.blaze=double(blaze);
 slm.disp_image(slm.init_image,1,1);
- 
+% slm.disp_image(img,1,1);
+
 %% Meadowlark SLM (HDMI)
 % lib_dir = './utils/meadowlarkhdmi_sdk/';
 lib_dir = 'C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\SDK\';

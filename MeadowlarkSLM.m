@@ -117,7 +117,7 @@ methods
         end
 
         if ~from_phase
-            img=obj.compute_phaseimg(image_in/255*2*pi,use_blaze,use_padding);
+            img=obj.compute_phaseimg(im2double(image_in)*2*pi,use_blaze,use_padding);
         else
             img=image_in;
         end
@@ -140,7 +140,7 @@ methods
 %             img=obj.reset_image_lut(img);
 %         end
 
-
+        figure;imshow(img,[]);colorbar;
 %         imshow(disp_img,[])
         calllib('Blink_C_wrapper', 'Write_image', obj.board_number,...
             rot90(mod(img,256)), prod(obj.sz), options.wait_for_trigger, options.external_pulse, options.timeout_ms);

@@ -142,17 +142,19 @@ methods
         end
          
         if use_padding
-            phase=obj.image_padding(phase);
+            phaseimg=obj.image_padding(phase);
+        else
+            phaseimg=phase;
         end
         
         if use_blaze
             if isempty(obj.blaze)
                 disp('no blaze added, set blaze first.');
             else
-                phase=double(phase)+obj.blaze;
+                phaseimg=phaseimg+obj.blaze;
             end
         end
-        phaseimg=obj.lut(mod(phase,2*pi));
+        phaseimg=obj.lut(phaseimg);
     end
 
     function disp_phase(obj,phase,use_blaze,use_padding)

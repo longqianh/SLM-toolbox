@@ -20,7 +20,7 @@ methods
         end
 
         if ~from_phase
-            img=obj.compute_phaseimg(image_in/255*2*pi,use_blaze,use_padding);
+            img=obj.compute_phaseimg(im2double(image_in)*2*pi,use_blaze,use_padding);
         else
             img=image_in;
         end
