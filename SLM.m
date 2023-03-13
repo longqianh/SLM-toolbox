@@ -8,6 +8,7 @@ properties
     init_image
     blaze % should be phase
     LUT
+    lambda % LUT wavelength
 
 end
 properties (Dependent)
@@ -62,6 +63,13 @@ methods
         else
             obj.LUT=[];
         end
+
+
+        if isprop(slm_para,'lambda')
+            obj.lambda=slm_para.wavelength;
+        else
+            obj.lambda=532e-9;
+        end
         if isprop(slm_para,'blaze')
             obj.blaze=slm_para.blaze;
         else 
@@ -77,7 +85,11 @@ methods
     function obj=set.blaze(obj,val)
         obj.blaze=val;
     end
-
+     
+    function obj=set.lambda(obj,val)
+        obj.lambda = val;
+    end
+     
     function sz=get.sz(obj)
         sz = [obj.height,obj.width];
     end
@@ -176,89 +188,69 @@ methods
 %     end
 % 		
     % -------- HOLOGRAPHY COMPUTATION --------
+     
+     function img_slm=GS_resample(obj,img,lambda,z,cam_p,mag_img,mag_prop)
+        slm_p=obj.pixel_size;
+        [h,w]=size(img);
+        img_mag = imresize(img,mag_img);
+        x = (round(-w*mag_img)/2 : round(w*mag_img)/2-1).*cam_p;
+        y = (round(-h*mag_img)/2 : round(h*mag_img)/2-1).*cam_p;
+        [X_mag,Y_mag]=meshgrid(x,y);
+%         dx_im=lambda*z/(obj.width*slm_p)/mag_prop;
+        dy_im=lambda*z/(obj.height*slm_p)/mag_prop;
+%         Nu = floor(cam_p*(w*mag_img-1)/dx_im); % ?
+        Nv = floor(cam_p*(h*mag_img-1)/dy_im); % ?
+%         u = (-Nu/2:Nu/2-1)*dx_im;
+        v = (-Nv/2:Nv/2-1)*dy_im;
+%         lambda*z*(-obj.height/2: dy_im: obj.height/2-1)*slm_p/mag_prop;
+        
+%         du = lambda*z/(cam_pixel*obj.width)/mag_prop;
+%         dv = lambda*z/(cam_pixel*obj.height)/mag_prop;
+        [U,V]=meshgrid(v);
 
-     function image_out=image_resample(obj,image_in,mag,sys_para)
-        % image resample for GS
+        if (w*mag_img*cam_p > dy_im*obj.height)
+            fprintf('Warning: Pattern too big!!');
+        end
+
+        img_int=interp2(X_mag,Y_mag,img_mag,U,V);
+        img_slm = zeros(obj.sz);
+       
+        loc_u = floor((obj.width-Nv)/2) : floor((obj.width+Nv)/2-1);
+        loc_v = floor((obj.height-Nv)/2) : floor((obj.height+Nv)/2-1);
+        img_slm(loc_v, loc_u) = img_int;
+        img_slm = img_slm - (img_slm<0).*img_slm;% 由于差值带来的小于0的地方补回0
+        img_slm = img_slm/max(max(img_slm)); % 插值后归一
+    end
+        
+     function phase=GS(obj,image_in,z,options)
         arguments
             obj
             image_in
-            mag
-            sys_para.lambda = 532e-9
-            sys_para.cam_pixel_size = 8e-6;
-            sys_para.mag_prop = 1;
-            sys_para.focal = 300e-3;
+            z
+            options.iter_num = 100
+            options.verbose = 0
         end
-        % mag_prop: magnification between SLM and obj-lens back focal plane
-
-        N=obj.height;
-        target =rot90(image_in,2); % fliplr(flipud())
-        if length(size(target))==3
-            target=squeeze(mean(target,3));
-        end
-        [h,w] = size(target) ;
-        L = max(h,w); 
-        L_mag=L*mag;
-%         target = imresize(target,[L_mag,L_mag]);
-        
-%         h = L_mag; w = L_mag;
-        target2 = zeros(h,w);
-        target3 = imresize(target,[floor(h*mag) floor(w*mag)]);
-        target2((h-floor(h*mag))/2+1:(h+floor(h*mag))/2,(w-floor(w*mag))/2+1:(w+floor(w*mag))/2) = target3;
-        target = target2;
-
-        % 重采样，用像面坐标x_im重新描述图样
-        dx_im = sys_para.lambda*sys_para.focal/(obj.pixel_size*N)/sys_para.mag_prop;
-        
-        xc2 = ceil(-L_mag/2 : L_mag/2-1).*sys_para.cam_pixel_size;
-        [Xc2, Yc2] = meshgrid(xc2); %-1 保持边界一致
-        
-        Nc = floor(sys_para.cam_pixel_size*(L_mag-1)/dx_im);
-        x_imt = ceil(-Nc/2 : Nc/2-1)*dx_im;
-        [X_imT, Y_imT] = meshgrid(x_imt); % Nc缩小一些,x_imt边界不能大于xc2，否则NaN
-        
-        if L_mag*sys_para.cam_pixel_size > dx_im*N
-            fprintf('Warning: Pattern too big!!');
-        end
-        
-        target = interp2(Xc2,Yc2,target,X_imT,Y_imT,'cubic');
-        image_out = zeros(obj.height,obj.width);
-        loc_h = floor((obj.height-Nc)/2+1) : floor((obj.height+Nc)/2);
-        loc_w = floor((obj.width-Nc)/2+1) : floor((obj.width+Nc)/2);
-        image_out(loc_h, loc_w) = target;
-        image_out = image_out - (image_out<0).*image_out;% 由于差值带来的小于0的地方补回0
-        image_out = image_out/max(max(image_out)); % 插值后归一
-
-     end
-
-    function phase=GS(obj,image_in,iter_num,verbose)
-
-        if nargin<3
-            iter_num=100;
-        end
-        if nargin<4
-            verbose=0;
-        end
+    
         % GS phase retrieval for lens imaging
         
         A0 = ones(obj.height, obj.width) .* (obj.X.^2 + obj.Y.^2 <= ((obj.height)/2).^2); % 光束直径限制
-        
-        a = sum(sum(A0.^2))/sum(sum(image_in.^2))/(obj.lambda*obj.focal).^2; % 能量守恒
-        image_in = image_in*sqrt(a);
-
-        phase=rand(obj.height,obj.width)*2*pi; % 初始随机相位
-        for i = 1:iter_num
+        a = sum(sum(A0.^2))/sum(sum(image_in.^2))/(obj.lambda*z).^2; % 能量守恒
+    
+        img = image_in*sqrt(a);
+        phase=rand(obj.sz)*2*pi; % 初始随机相位
+        for i = 1:options.iter_num
             Af = A0;
             f0 = Af.*exp(1i.*phase); % 振幅置1保留相位
             g0 = fftshift(fft2(f0)); 
             ang0 = angle(g0); % 取出相位与振幅
-            Ampg = image_in;
+            Ampg = img;
             g1=Ampg.*exp(1i.*ang0); % 目标振幅替换，保留相位
             f1=ifft2(fftshift(g1));    
             phase=angle(f1); % Ampf = abs(f1);%取出一次迭代后相位
         end
         phase = phase + pi; % angle返回-pi~pi，转换到0~2pi
         phase = phase.*A0;
-        if verbose
+        if options.verbose
             figure,imshow(phase,[]);title('phase extracted');
         end
     end

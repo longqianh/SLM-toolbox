@@ -140,8 +140,7 @@ methods
 %             img=obj.reset_image_lut(img);
 %         end
 
-        figure;imshow(img,[]);colorbar;
-%         imshow(disp_img,[])
+%         figure;imshow(img,[]);colorbar;
         calllib('Blink_C_wrapper', 'Write_image', obj.board_number,...
             rot90(mod(img,256)), prod(obj.sz), options.wait_for_trigger, options.external_pulse, options.timeout_ms);
         calllib('Blink_C_wrapper', 'ImageWriteComplete', obj.board_number, options.timeout_ms); 
