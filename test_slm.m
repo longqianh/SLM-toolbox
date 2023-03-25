@@ -7,7 +7,7 @@ slm_para.fresh_time=1/60;
 slm_para.pixel_size=8e-6;
 
 slm=HoloeyeSLM(slm_para);      
-slm.blaze=slm.blazedgrating(1,0,40)/(2*pi)*255;
+slm.blaze=slm.blazedgrating(1,0,3);
 % slm.LUT=importdata('./data/lut.cfit');
 slm.disp_image(slm.init_image,1,1);
 
@@ -43,12 +43,13 @@ slm_para.depth=8;
 slm_para.pixel_size=9.2e-6; 
 slm_para.bCppOrPython=false; 
 slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
-% blaze_angle=100; % 1~255
-slm.blaze=slm.blazedgrating(-1,0,4)/(2*pi)*240/255; 
-% slm.disp_image(slm.init_image,0,1); % bug here
+
+%% blazedgrating setup
+
+blaze=slm.blazedgrating(1,0,3)*1; % 220/255;
+slm.blaze=double(blaze);
 slm.disp_image(slm.init_image,1,1);
- 
-% slm.clear_sdk();
+
 %% image display
 close all;
 img=imread('./data/vortex_6_19.bmp');
@@ -60,7 +61,7 @@ slm.disp_image(img,1,1);
 wavelength=532e-9;
 cam_pixel_size=8e-6;
 focal=300e-3;
-mag_prop=1; % ?
+mag_prop=1; %
 mag_img=0.5;
 
 close all;

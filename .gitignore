@@ -8,3 +8,8 @@ test_meadowlark_slm.m
 output/*
 calib_meadowlark_slm.m
 calib_meadowlark_slm.m
+utils/diffractive_cali_vis.m
+utils/test_rgb_encoding.m
+resources/光的相干性-双缝干涉.pdf
+resources/闪耀光栅的傅里叶分析_赵博.pdf
+resources/SLM LUT 衍射法校正.md
