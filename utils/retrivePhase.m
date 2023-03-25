@@ -1,8 +1,11 @@
-function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath)
+function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath,debug)
     if nargin<5
         verbose=0;
     else
         verbose=1;
+    end
+    if nargin<6
+        debug=0;
     end
  
     clc;close all;
@@ -21,6 +24,7 @@ function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath)
 
     % Fit model to data.
     [fitresult, ~] = fit( xData, yData, ft, opts );
+%     plot(fitresult);hold on;plot(ySLM) % check quality
     startPoint=[fitresult.a0, fitresult.a1, fitresult.b1, fitresult.w];
     if verbose
         figure('Color','White');
@@ -37,14 +41,30 @@ function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath)
     end
     
     phase=zeros(length(imgs),1);
-
+    
+    if debug
+        figure('Color','White');
+        ySLM0=ySLM;
+    end
     for i=1:length(imgs)
         disp(['index: ',num2str(i)]);
         img=imgs{i};
         % Phase retrival
         ySLM=mean(img(yRange,xRange),1);
+        
         ySLM=smoothdata(ySLM);
         phase(i)=calPhase(xSLM,ySLM,startPoint);
+
+        if debug
+            if i>1
+                phi=phase(i)-phase(1);
+            elseif i==1
+                phi=0;
+            end
+            plot(ySLM0,'r');hold on;
+            plot(ySLM,'b');title(num2str(phi));hold off;
+            pause(0.3);
+        end
     end
         
     if verbose

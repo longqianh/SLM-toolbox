@@ -23,11 +23,11 @@ Image=libpointer('uint8Ptr', zeros(prod(slm.sz),1));
 Gray=120; 
 calllib('ImageGen', 'Generate_Stripe', Image, slm.width, slm.height, 0, Gray, PixelsPerStripe);
 Image=reshape(Image.Value,slm.sz);
-slm.disp_image(Image,0,1);
+slm.disp_image(Image,1,1);
 
 %% Initialize camera
-cam_para.ROI=[200 100 100 100];
-cam_para.exposure=0.003;
+cam_para.ROI=[350 250 200 150];
+cam_para.exposure=1/100;
 cam_para.gain=0;
 cam_para.trigger_frames=10;
 cam_para.frame_rate = 60;
@@ -44,7 +44,7 @@ Image = libpointer('uint8Ptr', zeros(prod(slm.sz),1));
 
 % Create an array to hold measurements from the analog input (AI) board
 AI_Intensities = zeros(NumDataPoints,2);
-slm.disp_image(slm.init_image,0,1);
+slm.disp_image(slm.init_image,1,1);
 pause(1);
 
 %loop through each region
@@ -60,7 +60,7 @@ for Region = 0:(NumRegions-1)
 %         figure('Color','White');
 %         imshow(img,[]);
         %write the image
-        slm.disp_image(img,0,1);
+        slm.disp_image(img,1,1);
 %         calllib('Blink_C_wrapper', 'Write_image', slm.board_number, Image, prod(slm.sz), slm.wait_for_trigger, slm.external_pulse, slm.timeout_ms);
 %         calllib('Blink_C_wrapper', 'Write_image', slm.board_number, Image, prod(slm.sz), 0, 0, 5000);
         

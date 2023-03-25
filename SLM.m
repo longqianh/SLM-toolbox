@@ -21,7 +21,7 @@ methods (Static)
     function x_lut=funLUT(x,lut)
         % x in (0,2pi)
         if isempty(lut)
-            disp('Use linear LUT.');
+%             disp('Use linear LUT.');
             x_lut=x/(2*pi)*255;
         else
 %             disp('Use calibrated LUT.');
@@ -192,7 +192,8 @@ methods
      function img_slm=GS_resample(obj,img,lambda,z,cam_p,mag_img,mag_prop)
         slm_p=obj.pixel_size;
         [h,w]=size(img);
-        img_mag = imresize(img,mag_img);
+        img_flip=flipud(img); % consider the last lens
+        img_mag = imresize(img_flip,mag_img);
         x = (round(-w*mag_img)/2 : round(w*mag_img)/2-1).*cam_p;
         y = (round(-h*mag_img)/2 : round(h*mag_img)/2-1).*cam_p;
         [X_mag,Y_mag]=meshgrid(x,y);
