@@ -4,6 +4,7 @@ cam_para.gain=0;
 cam_para.trigger_frames=10;
 cam_para.frame_rate = 90;
 cam_para.frame_delay = 10e-3;
+cam_para.vidtype= 'Y16 (752x480)';
 cam=Camera(cam_para);
 
 cam.start_preview();

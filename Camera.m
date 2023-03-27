@@ -21,7 +21,8 @@ classdef Camera
         obj.trigger_frames=cam_para.trigger_frames;
         obj.frame_rate = cam_para.frame_rate;
         imaqreset;
-        vid = videoinput('tisimaq_r2013_64', 1, 'Y16 (752x480)');
+       
+        vid = videoinput('tisimaq_r2013_64', 1, cam_para.vidtype);
         vid.FramesPerTrigger = cam_para.trigger_frames;
         obj.wait_time=cam_para.trigger_frames*(1/cam_para.frame_rate+cam_para.frame_delay);
         vid.ReturnedColorspace = 'grayscale';
@@ -39,8 +40,8 @@ classdef Camera
 
     function obj=set.ROI(obj,val)
         obj.ROI=val;
-%         obj.cam.ROIPosition=val;
     end
+
     function obj=set.exposure(obj,val)
         obj.exposure=val;
     end
@@ -66,6 +67,9 @@ classdef Camera
         preview(obj.cam);
     end
 
+    function trigger_mode(obj)
+        
+    end
     
     end
 end
