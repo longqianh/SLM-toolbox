@@ -67,9 +67,22 @@ classdef Camera
         preview(obj.cam);
     end
 
-    function trigger_mode(obj)
-        
+    function trigger_on(obj)
+        triggerconfig(obj.cam,"hardware");
+    end
+
+    function trigger_off(obj)
+        triggerconfig(obj.cam,"immediate");
     end
     
+    function trigger_info(obj)
+        config = triggerinfo(obj.cam);
+        fprintf("Trigger mode: %s\n",config.TriggerCondition);
+    end
+
+    function free(obj)
+        obj.stop_preview();
+        delete(obj.cam);
+    end
     end
 end

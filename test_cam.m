@@ -16,3 +16,10 @@ img=cam.capture(savePath);
 figure('Color','White');
 imshow(img);
 % cam.stop_preview();
+
+%% Trigger mode setting (with Bug now)
+cam.trigger_info();
+cam.trigger_on();
+cam.trigger_off();
+%% 
+cam.free();
