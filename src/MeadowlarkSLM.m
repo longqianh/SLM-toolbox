@@ -26,7 +26,7 @@ methods (Static)
     end
 
     function load_lut(board_number,lut_path)
-        calllib('Blink_C_wrapper','Load_LUT_file',board_number, lut_path);
+        calllib('Blink_C_wrapper','Load_LUT_file',board_number, char(lut_path));
         fprintf('LUT loaded from %s. LUT loading should not be called twice!\n',lut_path);
     end
 

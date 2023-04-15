@@ -1,10 +1,10 @@
-cam_para.ROI=[0 0 600 400];
+cam_para.ROI=[200 0 300 400];
 cam_para.exposure=0.01;
 cam_para.gain=0;
-cam_para.trigger_frames=10;
-cam_para.frame_rate = 90;
+cam_para.trigger_frames=1;
+cam_para.frame_rate = 100;
 cam_para.frame_delay = 10e-3;
-cam_para.vidtype= 'Y16 (752x480)';
+cam_para.vidtype= 'Y16 (640x480)'; %'Y16 (752x480)';
 cam=Camera(cam_para);
 
 cam.start_preview();
