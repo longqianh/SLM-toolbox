@@ -2,7 +2,7 @@
 clc;close all;clear;
 addpath("F:\Longqian\Projects\Exp-toolbox\src"); % add ExpManager first
 exp_toolbox=["SLM-toolbox"];
-ma=ExpManager('SLM-calibration',exp_toolbox);
+ma=ExpManager('SLM-calibration',exp_toolbox,"20230411");
 ma.info()
 before_path=fullfile(ma.exp_save_dir,'before');
 after_path=fullfile(ma.exp_save_dir,'after');
@@ -89,27 +89,30 @@ phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
 xRange=90:115;
-yRange=110;
+yRange=115;
 y0=yRange(round(length(yRange)/2));
 startPoint=[0 0 0 0.94]; % use curve fitting tool to determine
+
 phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,before_path);
-save(fullfile(ma.exp_save_dir,'phase_shift_ori.mat'),'phases');
+% save(fullfile(ma.exp_save_dir,'phase_shift_ori.mat'),'phases');
 
 figure('Color','White');
 plot(phases);hold on;
 plot(unwrap(phases));
 legend('original phase','unwrapped phase');
 phaseVal=unwrap(phases);
+print(fullfile(before_path,'slm_cali_strip_curve'),'-dpng','-r400');
 %% For Gamma Fitting
-bit=11;
+close all;
+gammabit=11;
 one_lambda_range=1:165;
+polytype='poly9';
 lut_path=fullfile(ma.exp_save_dir,strcat(ma.exp_date,".lut"));
-computeLUT(phaseVal,one_lambda_range,bit,lut_path);
+SLM.computeLUT(phaseVal,one_lambda_range,gammabit,polytype,lut_path);
+print(fullfile(after_path,'gamma_curve'),'-dpng','-r400');
 %% For Gray-Phase Fitting (not recommended)
 %     grayVal=grayVal(1:length(phases));
 grayVal=(0:255)'; 
-% one_lambda_range=25:73;
-% one_lambda_range=73:187;
 one_lambda_range=1:256;
 grayVal_cut=grayVal(one_lambda_range);
 phaseVal_cut=phaseVal(one_lambda_range);
@@ -138,7 +141,7 @@ slm.disp_image(slm.init_image,0,1);
 % slm.dc=0.7;
 % phaseGT=linspace(0,2*pi,length(grayVal_cut));
 phaseGT=linspace(0,2*pi,256);
-eval_phases=slm.cali_genimgs(phaseGT,'mode','double','base',0);
+eval_phases=ModulatorUtil.generate_cali_images(slm.sz,phaseGT,'mode','double','base',0);
 
 cam.start_preview();
 % slm.disp_image(slm.init_image,1,1);
@@ -155,12 +158,18 @@ end
 cam.stop_preview();
 
 %% Evaluation: compute
+close all;
 phaseIndex=0:length(eval_phases)-1;
-cap_imgs=load_imgs(after_path,phaseIndex);
-calibrated_phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,after_path);
+cap_imgs=ModulatorUtil.load_imgs(after_path,phaseIndex,'img');
+vidtype="avi";
+calibrated_phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,after_path,vidtype);
 
 eval_cali_result(phaseGT',calibrated_phases,ma.exp_save_dir);
 
+%% if need gif
+addpath(genpath('F:\Longqian\Projects\Exp-toolbox\src'))
+vidpath='F:\Longqian\Projects\Experiments\20230411\SLM-calibration\after\shiftvedio.avi';
+avi2gif(vidpath,0.03)
 %% Unload
 % slm.clear_sdk();
 
@@ -210,5 +219,5 @@ function eval_cali_result(phaseGT,phase_aftercali,savedir)
     legend( h, 'phaseVal vs. phaseGT', ['$k=',num2str(fitresult.p1), ', R^2=',num2str(gof.rsquare),'$'], 'Location', 'best','interpreter','latex');
     xlabel('Phase Groundtruth','interpreter','latex');
     ylabel('Phase Value / radian','interpreter','latex');
-    print([savedir,'/corrected_result'],'-dpng','-r400');
+    print(fullfile(savedir,'calib_eval'),'-dpng','-r400');
 end

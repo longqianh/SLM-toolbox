@@ -10,17 +10,16 @@ methods
         obj.screen_pos = [scrsz(3) scrsz(4)-slm_para.height slm_para.width slm_para.height]; 
     end
 
-    function disp_image(obj,image_in,use_blaze,use_padding,from_phase)
+    function disp_image(obj,image_in,use_blaze,from_phase)
         arguments
             obj
             image_in
             use_blaze = 0
-            use_padding = 0
             from_phase = 0
         end
 
         if ~from_phase
-            img=obj.compute_phaseimg(im2double(image_in)*2*pi,use_blaze,use_padding);
+            img=obj.compute_phaseimg(im2double(image_in)*2*pi,use_blaze);
         else
             img=image_in;
         end

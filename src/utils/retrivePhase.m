@@ -1,10 +1,13 @@
-function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath,debug)
+function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath,vidtype,debug)
     if nargin<5
         verbose=0;
     else
         verbose=1;
     end
     if nargin<6
+        vidtype="avi";
+    end
+    if nargin<7
         debug=0;
     end
  
@@ -28,16 +31,14 @@ function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath,debug)
     startPoint=[fitresult.a0, fitresult.a1, fitresult.b1, fitresult.w];
     if verbose
         figure('Color','White');
-%         imshow(img,[]);
         image(img,'CDataMapping','scaled');
         line([1 size(img,2)],[y0 y0],'Color','cyan');
-%         print([path,'/slm_cali_strip'],'-dpng','-r400');
         figure('Color','White');
         plot(xData,yData,'b');hold on;
         plot(fitresult);
         legend('original curve','fitted curve');
         xlabel('横坐标位置');ylabel('归一化强度');
-%         print([path,'/slm_cali_strip_curve'],'-dpng','-r400');
+        
     end
     
     phase=zeros(length(imgs),1);
@@ -68,7 +69,7 @@ function phase=retrivePhase(imgs,yRange,xRange,startPoint,savePath,debug)
     end
         
     if verbose
-       show_phase_shift(imgs,y0,savePath);
+       show_phase_shift(imgs,y0,savePath,vidtype);
     end
     
     phase=phase-phase(1);
@@ -120,9 +121,12 @@ function phase=calPhase(xSLM,ySLM,startPoint,verbose)
 end
 
 
-function show_phase_shift(imgs,y0,savepath)
+function show_phase_shift(imgs,y0,savepath,vidtype)
     if nargin<3
         savepath='';
+    end
+    if nargin<4
+        vidtype='avi';
     end
 
     anchor=imgs{1};
@@ -131,21 +135,35 @@ function show_phase_shift(imgs,y0,savepath)
     end
 
     nData=length(imgs);
-    fig=figure('Color','White');
+    fig=figure('Color','White','MenuBar','none','ToolBar','none','resize','off');
     m=moviein(nData);
-    writerObj = VideoWriter(fullfile(savepath,'shiftvedio.avi'));
-    open(writerObj);
+    if vidtype=="avi"
+        writerObj = VideoWriter(fullfile(savepath,'shiftvedio.avi'));
+        open(writerObj);
+    end
     cmp=zeros(size(anchor));
     cmp(1:y0,:)=anchor(1:y0,:);
     for i=1:nData
         disp(i);
         img=imgs{i};
         cmp(y0+1:end,:)=img(y0+1:end,:);
-%         imshow(cmp,[]);
         image(cmp,'CDataMapping','scaled'); % when imshow failed
+%         set(gcf, 'Color', 'w'); % set the figure background to white
+        set(gca, 'Position', [0 0 1 1]); % set the axis position to cover the entire figure
+        set(gca,'visible','off')
+
+%         axis off;
         m(i+1)=getframe(fig);
-%         pause(0.1)
-        writeVideo(writerObj,m(i+1));
+        if vidtype=="avi"
+            writeVideo(writerObj,m(i+1));
+        end
     end
-    close(writerObj);
+
+
+    if vidtype=="avi"
+        close(writerObj);
+    elseif vidtype=="gif"
+        hold off;
+    end
+        
 end

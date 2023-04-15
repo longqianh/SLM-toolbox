@@ -104,12 +104,11 @@ methods
 %         calllib('ImageGen', 'Generate_Stripe', img, obj.width, obj.height, PixelValue, Gray, T);
 %     end
 
-    function disp_image(obj,image_in,use_blaze,use_padding,from_phase,options)
+    function disp_image(obj,image_in,use_blaze,from_phase,options)
         arguments
             obj
             image_in
             use_blaze (1,1) = true
-            use_padding (1,1) = true
             from_phase = false
             options.wait_for_trigger (1,1) = false
             options.external_pulse (1,1) = false
@@ -122,7 +121,7 @@ methods
             else
                 img=im2double(image_in)*2*pi;
             end
-            img=obj.compute_phaseimg(img,use_blaze,use_padding);
+            img=obj.compute_phaseimg(img,use_blaze);
         else
             img=image_in;
         end

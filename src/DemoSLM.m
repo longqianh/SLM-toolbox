@@ -5,15 +5,14 @@ methods
         obj=obj@SLM(slm_para);
     end
 
-    function disp_image(obj,image_in,use_blaze,use_padding,menuoff)
+    function disp_image(obj,image_in,use_blaze,menuoff)
          arguments
             obj
             image_in
             use_blaze = 0
-            use_padding = 0
             menuoff = 1
          end
-            img=obj.compute_phaseimg(image_in,use_blaze,use_padding);
+            img=obj.compute_phaseimg(image_in,use_blaze);
             if menuoff
                 figure('Color','White','Name','DemoDisplay','MenuBar','none','ToolBar','none','resize','off');
             else

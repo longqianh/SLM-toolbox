@@ -18,6 +18,45 @@ properties (Dependent)
 end
 
 methods (Static)
+    function computeLUT(phaseVal,oneLambdaRange,gammaBit,polytype,savePath,verbose)
+        arguments
+            phaseVal
+            oneLambdaRange
+            gammaBit
+            polytype = 'poly9'
+            savePath = 'test.lut'
+            verbose = 1
+        end
+
+        phaseGT=linspace(0,2*pi,256);
+        
+        phaseVal_cut=phaseVal(oneLambdaRange)-phaseVal(oneLambdaRange(1));
+        
+        grayVal=phaseGT/(2*pi)*(2^gammaBit-1);
+        grayVal_cut=grayVal(oneLambdaRange);
+    
+        lutVal=unwrap(phaseVal_cut)/(2*pi)*255;
+        ft = fittype( polytype );
+        [xData, yData] = prepareCurveData( lutVal, grayVal_cut );
+        [lutCurve, ~] = fit( xData, yData, ft );
+            
+        grayLUT=(0:255)';
+        mapLUT=[grayLUT,round(lutCurve(grayLUT))];
+        
+        if verbose
+            figure('Color','White');
+            plot(xData,yData,'b.');hold on;
+            plot(grayLUT,mapLUT(:,2),'r');
+            xlim([0 256]);
+            title('Fitted gamma curve (LUT)');
+
+        end
+        
+        fileID = fopen(savePath,'w+');
+        fprintf(fileID,"%d %d\n",mapLUT');
+        fclose(fileID);
+    end
+
     function x_lut=funLUT(x,lut)
         % x in (0,2pi)
         if isempty(lut)
@@ -38,7 +77,7 @@ methods (Static)
 end
 
 methods (Abstract)
-    disp_image(obj,image_in,use_blaze,use_padding);
+    disp_image(obj,image_in,use_blaze);
 
 end
 methods
@@ -89,7 +128,11 @@ methods
     function obj=set.lambda(obj,val)
         obj.lambda = val;
     end
-     
+
+    function obj=set.init_image(obj,val)
+        obj.init_image = val;
+    end
+
     function sz=get.sz(obj)
         sz = [obj.height,obj.width];
     end
@@ -114,65 +157,45 @@ methods
     
     function gray_image=reset_image_lut(obj,image_in)
         % change image from linear lut to calibrated lut 
-        gray_image=obj.lut(double(image_in)/255*2*pi);
+        gray_image=obj.lut(im2double(image_in)*2*pi);
     end
 
-    function image_out=image_padding(obj,image_in)
-         img_sz=size(image_in);
-         image_out=zeros(obj.height,obj.width);
-         h_mid=obj.height/2; w_mid=obj.width/2;
-         img_h_mid=img_sz(1)/2; img_w_mid=img_sz(2)/2;
-         if (img_sz(1)<=obj.height) && (img_sz(2)<=obj.width)
-             image_out(h_mid-img_h_mid+1:h_mid+img_h_mid,w_mid-img_w_mid+1:w_mid+img_w_mid)=image_in;
-         end
-         if (img_sz(1)<=obj.height) && (img_sz(2)>obj.width)
-             scale=obj.width/img_sz(2);
-             image_resize=imresize(image_in,scale);
-             image_out(h_mid-img_h_mid*scale+1:h_mid+img_h_mid*scale,...
-                 w_mid-img_w_mid*scale+1:w_mid+img_w_mid*scale)=image_resize;
-         end
-         if (img_sz(1)>obj.height) && (img_sz(2)<=obj.width)
-             scale=obj.height/img_sz(1);
-             image_resize=imresize(image_in,scale);
-             image_out(h_mid-img_h_mid*scale+1:h_mid+img_h_mid*scale,...
-                 w_mid-img_w_mid*scale+1:w_mid+img_w_mid*scale)=image_resize;
-         end
-         if (img_sz(1)>obj.height) && (img_sz(2)>obj.width)
-             scale=min([obj.height/img_sz(1),obj.width/img_sz(2)]);
-             image_resize=imresize(image_in,scale);
-             image_out(h_mid-img_h_mid*scale+1:h_mid+img_h_mid*scale,...
-                 w_mid-img_w_mid*scale+1:w_mid+img_w_mid*scale)=image_resize;
-         end
-    end
-
-    function phaseimg=compute_phaseimg(obj,phase,use_blaze,use_padding)
-        if nargin<3
-            use_blaze=0;
-        end
-        if nargin<4
-            use_padding=0;
+    function phaseimg=compute_phaseimg(obj,phase,use_blaze)
+        arguments
+            obj
+            phase
+            use_blaze = 0;
         end
          
-        if use_padding
-            phaseimg=obj.image_padding(phase);
-        else
-            phaseimg=phase;
-        end
-        
         if use_blaze
             if isempty(obj.blaze)
                 disp('no blaze added, set blaze first.');
+                phaseimg=phase;
             else
-                phaseimg=phaseimg+obj.blaze;
+                phaseimg=phase+ModulatorUtil.centercut(obj.blaze,size(phase));
             end
+        else
+            phaseimg=phase;
         end
+
+        phaseimg=ModulatorUtil.image_padding(phaseimg,obj.sz);
+        
+        
+%         if use_blaze
+%             if isempty(obj.blaze)
+%                 disp('no blaze added, set blaze first.');
+%             else
+%                 phaseimg=phaseimg+obj.blaze;
+%             end
+%         end
+        
         phaseimg=obj.lut(phaseimg);
     end
 
-    function disp_phase(obj,phase,use_blaze,use_padding)
+    function disp_phase(obj,phase,use_blaze)
         % phase: [0,2pi]
-        phaseimg=obj.compute_phaseimg(phase,use_blaze,use_padding);
-        obj.disp_image(phaseimg,0,0,1);
+        phaseimg=obj.compute_phaseimg(phase,use_blaze);
+        obj.disp_image(phaseimg,use_blaze);
     end
 % 
 %     function disp_image_seq(obj,imgs,interval_time)
@@ -279,33 +302,7 @@ methods
     end
 
    % -------- CALIBRATION
-   function gray_imgs=cali_genimgs(obj,grayVal,options)
-       arguments
-           obj
-           grayVal = 0:2^obj.depth-1
-           options.mode = "double"  
-           options.base = 0
-           options.sz
-       end
-       if isprop(options,'sz'), img_sz=options.sz; else, img_sz=obj.sz; end
-       n=length(grayVal);
-       gray_imgs=cell(n,1);
-       for i=1:n
-            if options.mode=="whole"
-                gray_imgs{i}=grayVal(i)*ones(img_sz,'double');
-            elseif options.mode=="double"
-                tmp=zeros(img_sz,'double');
-                tmp(:,1:round(img_sz(2)/2))=grayVal(i);
-                tmp(:,round(img_sz(2)/2)+1:end)=options.base;
-                gray_imgs{i}=tmp;
-            elseif options.mode=="double-rev"
-                tmp=zeros(img_sz,'double');
-                tmp(:,1:round(img_sz(2)/2))=options.base;
-                tmp(:,round(img_sz(2)/2)+1:end)=grayVal(i);
-                gray_imgs{i}=tmp;
-            end
-        end
-   end
+  
 
    % -------- CONNECTION/COMMUNICATION --------
    % waiting.       
