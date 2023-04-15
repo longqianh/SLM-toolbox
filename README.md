@@ -23,8 +23,8 @@ Matlab toolbox for easy-use spatial light modulator (SLM).
 
 - allow blazed-grating auto-apply 
 
-- display phase: `slm.disp_phase(phase_,use_blaze,use_padding)`
-- display image: `slm.disp_image(image_,use_blaze,use_padding)`
+- display phase: `slm.disp_phase(phase_,use_blaze)`
+- display image: `slm.disp_image(image_,use_blaze)`
 
 
 
