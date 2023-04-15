@@ -195,7 +195,7 @@ methods
     function disp_phase(obj,phase,use_blaze)
         % phase: [0,2pi]
         phaseimg=obj.compute_phaseimg(phase,use_blaze);
-        obj.disp_image(phaseimg,use_blaze);
+        obj.disp_image(phaseimg,use_blaze,1);
     end
 % 
 %     function disp_image_seq(obj,imgs,interval_time)
