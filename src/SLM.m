@@ -160,11 +160,12 @@ methods
         gray_image=obj.lut(im2double(image_in)*2*pi);
     end
 
-    function phaseimg=compute_phaseimg(obj,phase,use_blaze)
+    function phaseimg=compute_phaseimg(obj,phase,use_blaze,amp)
         arguments
             obj
             phase
             use_blaze = 0;
+            amp = [];
         end
          
         if use_blaze
@@ -172,12 +173,19 @@ methods
                 disp('no blaze added, set blaze first.');
                 phaseimg=phase;
             else
-                phaseimg=phase+ModulatorUtil.centercut(obj.blaze,size(phase));
+                if ~isempty(amp)
+                    phaseimg=phase+amp.*ModulatorUtil.centercut(obj.blaze,size(phase));
+                else
+                    phaseimg=phase+ModulatorUtil.centercut(obj.blaze,size(phase));    
+                end
             end
         else
             phaseimg=phase;
+            if ~isempty(amp)
+                disp("add blaze first\n");
+            end
         end
-
+        
         phaseimg=ModulatorUtil.image_padding(phaseimg,obj.sz);
         
         
@@ -192,9 +200,15 @@ methods
         phaseimg=obj.lut(phaseimg);
     end
 
-    function disp_phase(obj,phase,use_blaze)
+    function disp_phase(obj,phase,use_blaze,options)
+        arguments
+            obj
+            phase
+            use_blaze = 0
+            options.amp = []
+        end
         % phase: [0,2pi]
-        phaseimg=obj.compute_phaseimg(phase,use_blaze);
+        phaseimg=obj.compute_phaseimg(phase,use_blaze,options.amp);
         obj.disp_image(phaseimg,use_blaze,1);
     end
 % 

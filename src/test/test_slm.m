@@ -53,7 +53,7 @@ slm.disp_image(slm.init_image,1);
 %% image display
 close all;
 img=imread('../data/vortex_6_19.bmp');
-slm.disp_image(img,1);
+slm.disp_image(img,0);
 % slm.disp_image(img,0,1);
 
 %% holography display 

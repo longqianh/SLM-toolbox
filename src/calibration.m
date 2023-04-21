@@ -2,14 +2,15 @@
 clc;close all;clear;
 addpath("F:\Longqian\Projects\Exp-toolbox\src"); % add ExpManager first
 exp_toolbox=["SLM-toolbox"];
-ma=ExpManager('SLM-calibration',exp_toolbox,"20230411");
+ma=ExpManager('SLM-calibration-4',exp_toolbox);
 ma.info()
 before_path=fullfile(ma.exp_save_dir,'before');
 after_path=fullfile(ma.exp_save_dir,'after');
 ma.mkdirs(before_path);
 ma.mkdirs(after_path);
 %% Initialize Cam
-cam_para.ROI=[200 100 200 200];
+cam_para.ROI=[300 150 200 200];
+% cam_para.ROI=[0 0 600 400];
 cam_para.exposure=1/200;
 cam_para.gain=0;
 cam_para.trigger_frames=3;
@@ -45,8 +46,8 @@ lut_path=strcat(lib_dir,'linear.lut');
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
 blaze=slm.blazedgrating(1,0,12)*0.87;% 220/255;
 slm.blaze=double(blaze);
-% slm.disp_image(slm.init_image,1,1);
-slm.disp_image(slm.init_image,0,1);
+% slm.disp_image(slm.init_image,1);
+slm.disp_image(slm.init_image,0);
 
 % Meadowlark-HDMI
 % lib_dir = './utils/meadowlarkhdmi_sdk/';
@@ -66,13 +67,13 @@ slm.disp_image(slm.init_image,0,1);
 
 %% Before Calibration
 grayVal=(0:255)'; 
-loaded_imgs=slm.cali_genimgs(grayVal,'mode','double','base',0);
-slm.disp_image(loaded_imgs{1},0,1);pause(1);
+loaded_imgs=ModulatorUtil.generate_cali_images(slm.sz,grayVal,'mode','double','base',0);
+slm.disp_image(loaded_imgs{1},0);pause(1);
 
 for i=1:length(loaded_imgs)
     savePath=fullfile(before_path,num2str(i-1));
     disp(['(before) image: ',num2str(i-1)]);
-    slm.disp_image(loaded_imgs{i},0,1);
+    slm.disp_image(loaded_imgs{i},0);
     pause(0.05);
     cam.capture(savePath);
 end
@@ -88,8 +89,8 @@ cam.stop_preview();
 phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
-xRange=90:115;
-yRange=115;
+xRange=116:146;
+yRange=110;
 y0=yRange(round(length(yRange)/2));
 startPoint=[0 0 0 0.94]; % use curve fitting tool to determine
 
@@ -105,8 +106,8 @@ print(fullfile(before_path,'slm_cali_strip_curve'),'-dpng','-r400');
 %% For Gamma Fitting
 close all;
 gammabit=11;
-one_lambda_range=1:165;
-polytype='poly9';
+one_lambda_range=1:180;
+polytype='poly7';
 lut_path=fullfile(ma.exp_save_dir,strcat(ma.exp_date,".lut"));
 SLM.computeLUT(phaseVal,one_lambda_range,gammabit,polytype,lut_path);
 print(fullfile(after_path,'gamma_curve'),'-dpng','-r400');
@@ -136,7 +137,7 @@ slm.clear_sdk();
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path); 
 blaze=slm.blazedgrating(1,0,12)*0.87;
 slm.blaze=double(blaze);
-slm.disp_image(slm.init_image,0,1);
+slm.disp_image(slm.init_image,0);
 %% Evaluation: replay calibrated phase
 % slm.dc=0.7;
 % phaseGT=linspace(0,2*pi,length(grayVal_cut));
@@ -145,12 +146,12 @@ eval_phases=ModulatorUtil.generate_cali_images(slm.sz,phaseGT,'mode','double','b
 
 cam.start_preview();
 % slm.disp_image(slm.init_image,1,1);
-slm.disp_phase(eval_phases{1},0,1);
+slm.disp_phase(eval_phases{1},0);
 pause(1);
 for i=1:length(eval_phases)
     savePath=fullfile(after_path,num2str(i-1));
     disp(['(after) image: ',num2str(i-1)]);
-    slm.disp_phase(eval_phases{i},0,1);
+    slm.disp_phase(eval_phases{i},0);
     
     pause(0.06);
     cam.capture(savePath);

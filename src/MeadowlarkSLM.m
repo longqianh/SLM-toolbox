@@ -110,6 +110,7 @@ methods
             image_in
             use_blaze (1,1) = true
             from_phase = false
+            options.amp = [];
             options.wait_for_trigger (1,1) = false
             options.external_pulse (1,1) = false
             options.timeout_ms (1,1) = 5000
@@ -121,7 +122,7 @@ methods
             else
                 img=im2double(image_in)*2*pi;
             end
-            img=obj.compute_phaseimg(img,use_blaze);
+            img=obj.compute_phaseimg(img,use_blaze,options.amp);
         else
             img=image_in;
         end
