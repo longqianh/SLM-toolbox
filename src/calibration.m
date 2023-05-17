@@ -1,23 +1,23 @@
 %% Initialize Exp
 clc;close all;clear;
-addpath("F:\Longqian\Projects\Exp-toolbox\src"); % add ExpManager first
-exp_toolbox=["SLM-toolbox"];
-ma=ExpManager('SLM-calibration-4',exp_toolbox);
+addpath("F:\Longqian\Projects\ExpManager\src"); % add ExpManager first
+exp_toolbox=["SLM-toolbox","Camera-toolbox"];
+ma=ExpManager('SLM-calibration-1',exp_toolbox);
 ma.info()
 before_path=fullfile(ma.exp_save_dir,'before');
 after_path=fullfile(ma.exp_save_dir,'after');
 ma.mkdirs(before_path);
 ma.mkdirs(after_path);
 %% Initialize Cam
-cam_para.ROI=[300 150 200 200];
-% cam_para.ROI=[0 0 600 400];
-cam_para.exposure=1/200;
+% cam_para.ROI=[300 150 200 200];
+cam_para.ROI=[0 0 600 400];
+cam_para.exposure=1/400;
 cam_para.gain=0;
 cam_para.trigger_frames=3;
 cam_para.frame_rate = 60;
 cam_para.frame_delay = 0.1;
 cam_para.vidtype= 'Y16 (640x480)'; %'Y16 (752x480)';
-cam=Camera(cam_para);
+cam=ICCamera(cam_para);
 
 %% Initialize SLM 
 
@@ -77,7 +77,7 @@ for i=1:length(loaded_imgs)
     pause(0.05);
     cam.capture(savePath);
 end
-cam.stop_preview();
+cam.close();
 
 %% Phase Retrivel: pre-load
 % to determine x/y range uncomment the following
@@ -89,8 +89,8 @@ cam.stop_preview();
 phaseIndex=0:255;
 cap_imgs=load_imgs(before_path,phaseIndex);
 %% Phase Retrivel: compute
-xRange=116:146;
-yRange=110;
+xRange=330:370;
+yRange=244;
 y0=yRange(round(length(yRange)/2));
 startPoint=[0 0 0 0.94]; % use curve fitting tool to determine
 
@@ -144,7 +144,7 @@ slm.disp_image(slm.init_image,0);
 phaseGT=linspace(0,2*pi,256);
 eval_phases=ModulatorUtil.generate_cali_images(slm.sz,phaseGT,'mode','double','base',0);
 
-cam.start_preview();
+cam.preview();
 % slm.disp_image(slm.init_image,1,1);
 slm.disp_phase(eval_phases{1},0);
 pause(1);
@@ -156,7 +156,7 @@ for i=1:length(eval_phases)
     pause(0.06);
     cam.capture(savePath);
 end
-cam.stop_preview();
+cam.close();
 
 %% Evaluation: compute
 close all;

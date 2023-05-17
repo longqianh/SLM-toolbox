@@ -51,11 +51,21 @@ slm.blaze=double(blaze);
 slm.disp_image(slm.init_image,1);
 
 %% image display
+blaze=slm.blazedgrating(1,0,6)*0.87;% 220/255;
+slm.blaze=double(blaze);
+slm.disp_image(slm.init_image,1);
+%%
 close all;
-img=imread('../data/vortex_6_19.bmp');
-slm.disp_image(img,0);
-% slm.disp_image(img,0,1);
+m=9;
+x=slm.pixel_size*(-slm.height/2+1:slm.height/2);
+[X,Y]=meshgrid(x,x);
+theta = atan2(Y, X);
+phi = mod(m*theta,2*pi);
+% img=imread('../data/vortex_6_19.bmp');
+% slm.disp_image(img,1);
 
+% figure;imshow(phi,[])
+slm.disp_phase(phi,1);
 %% holography display 
 
 wavelength=532e-9;
