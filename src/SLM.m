@@ -186,7 +186,7 @@ methods
             end
         end
         
-        phaseimg=ModulatorUtil.image_padding(phaseimg,obj.sz);
+        phaseimg=ModulatorUtil.image_padding(phaseimg,obj.sz)+obj.init_image;
         
         
 %         if use_blaze

@@ -56,7 +56,7 @@ slm.blaze=double(blaze);
 slm.disp_image(slm.init_image,1);
 %%
 close all;
-m=9;
+m=10;
 x=slm.pixel_size*(-slm.height/2+1:slm.height/2);
 [X,Y]=meshgrid(x,x);
 theta = atan2(Y, X);
