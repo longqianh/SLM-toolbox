@@ -19,7 +19,12 @@ methods
         end
 
         if ~from_phase
-            img=obj.compute_phaseimg(im2double(image_in)*2*pi,use_blaze);
+            if isa(image_in,'double')
+                image_in_norm=image_in/255;
+            else
+                image_in_norm=im2double(image_in);
+            end
+            img=obj.compute_phaseimg(image_in_norm*2*pi,use_blaze);
         else
             img=image_in;
         end

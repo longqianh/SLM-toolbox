@@ -51,12 +51,13 @@ methods(Static)
     end
 
 
-    function imgs=load_imgs(dirname,img_index,img_name)
+    function imgs=load_imgs(dirname,img_index)
     
         imgs=cell(length(img_index),1);
         for i=1:length(img_index)
-            load(fullfile(dirname,[num2str(img_index(i)),'.mat']),img_name);
-            imgs{i}=im2double(img);
+            % load(fullfile(dirname,[num2str(img_index(i)),'.mat']),img_name);
+            % imgs{i}=im2double(img);
+            imgs{i} = imread(fullfile(dirname,[num2str(img_index(i)),'.bmp']));
         end
         disp([num2str(length(img_index)),' image loaded.']);
     end

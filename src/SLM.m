@@ -18,13 +18,14 @@ properties (Dependent)
 end
 
 methods (Static)
-    function computeLUT(phaseVal,oneLambdaRange,gammaBit,polytype,savePath,verbose)
+    function computeLUT(phaseVal,oneLambdaRange,gammaBit,polytype,savePath,slm_type,verbose)
         arguments
             phaseVal
             oneLambdaRange
             gammaBit
             polytype = 'poly9'
             savePath = 'test.lut'
+            slm_type = 'meadowlark'
             verbose = 1
         end
 
@@ -37,11 +38,27 @@ methods (Static)
     
         lutVal=unwrap(phaseVal_cut)/(2*pi)*255;
         ft = fittype( polytype );
-        [xData, yData] = prepareCurveData( lutVal, grayVal_cut );
+        [xData, yData] = prepareCurveData(lutVal, grayVal_cut);
+        % [xData, yData] = prepareCurveData(grayVal_cut,lutVal);
         [lutCurve, ~] = fit( xData, yData, ft );
             
-        grayLUT=(0:255)';
-        mapLUT=[grayLUT,round(lutCurve(grayLUT))];
+        % grayLUT=(0:255)';
+        if slm_type == 'holoeye'
+                    N=1024;
+                    grayLUT=linspace(0,255,N)';
+                    mapLUT=[grayLUT,round(lutCurve(grayLUT))];     
+                    writematrix(mapLUT(:,2),savePath);         
+        elseif  slm_type=='meadowlark'
+                    N=255;
+                    grayLUT=linspace(0,255,N)';
+                    mapLUT=[grayLUT,round(lutCurve(grayLUT))];
+                    fileID = fopen(savePath,'w+'); % .lut 
+                    fprintf(fileID,"%d %d\n",mapLUT');
+                    fclose(fileID); 
+        else
+        end
+         
+        
         
         if verbose
             figure('Color','White');
@@ -51,10 +68,6 @@ methods (Static)
             title('Fitted gamma curve (LUT)');
 
         end
-        
-        fileID = fopen(savePath,'w+');
-        fprintf(fileID,"%d %d\n",mapLUT');
-        fclose(fileID);
     end
 
     function x_lut=funLUT(x,lut)

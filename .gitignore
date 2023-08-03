@@ -13,3 +13,6 @@ utils/test_rgb_encoding.m
 resources/光的相干性-双缝干涉.pdf
 resources/闪耀光栅的傅里叶分析_赵博.pdf
 resources/SLM LUT 衍射法校正.md
+*.bmp
+src/test/test_amplitude.m
+src/test/test_amplitude.m

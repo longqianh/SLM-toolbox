@@ -25,7 +25,7 @@ slm_para.max_transients = 10;
 lut_path='C:\Program Files\Meadowlark Optics\Blink 1920 HDMI\LUT Files\1920x1152_linearVoltage.lut';
 % lut_path=strcat(lib_dir,'slm4644_532.lut');
 slm=MeadowlarkSLM(slm_para,lib_dir,lut_path);
-slm.LUT=importdata('./data/lut.cfit');
+% slm.LUT=importdata('./data/lut.cfit');
 %%
 blaze=slm.blazedgrating(1,0,12)*0.88;% 220/255;
 slm.blaze=double(blaze);
@@ -54,7 +54,7 @@ slm.disp_image(slm.init_image,1);
 blaze=slm.blazedgrating(1,0,6)*0.87;% 220/255;
 slm.blaze=double(blaze);
 slm.disp_image(slm.init_image,1);
-%%
+%% vortex beam
 close all;
 m=9;
 x=slm.pixel_size*(-slm.height/2+1:slm.height/2);
@@ -63,16 +63,16 @@ theta = atan2(Y, X);
 phi = mod(m*theta,2*pi);
 % img=imread('../data/vortex_6_19.bmp');
 % slm.disp_image(img,1);
-
+phi=imresize(phi,0.7);
 % figure;imshow(phi,[])
 slm.disp_phase(phi,1);
 %% holography display 
 
-wavelength=532e-9;
-cam_pixel_size=8e-6;
-focal=300e-3;
-mag_prop=1; %
-mag_img=0.5;
+wavelength=488e-9;
+cam_pixel_size=4e-6;
+focal=180e-3;
+mag_prop=2; %
+mag_img=0.2;
 
 close all;
 star_img=imread('../data/star.png');
