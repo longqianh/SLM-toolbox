@@ -16,3 +16,4 @@ resources/SLM LUT 衍射法校正.md
 *.bmp
 src/test/test_amplitude.m
 src/test/test_amplitude.m
+*.zip

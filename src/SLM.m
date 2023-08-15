@@ -219,9 +219,13 @@ methods
             phase
             use_blaze = 0
             options.amp = []
+            options.mask = []
         end
         % phase: [0,2pi]
         phaseimg=obj.compute_phaseimg(phase,use_blaze,options.amp);
+        if ~isempty(options.mask)
+            phaseimg=phaseimg.*ModulatorUtil.image_padding(options.mask,obj.sz);
+        end
         obj.disp_image(phaseimg,use_blaze,1);
     end
 % 

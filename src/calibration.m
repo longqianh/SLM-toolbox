@@ -2,7 +2,7 @@
 clc;close all;clear;
 addpath("F:\Longqian\Projects\ExpManager\src"); % add ExpManager first
 exp_toolbox=["SLM-toolbox","Camera-toolbox"];
-ma=ExpManager('SLM-calibration',exp_toolbox,'20230718');
+ma=ExpManager('SLM-calibration-3',exp_toolbox);
 ma.info()
 before_path=fullfile(ma.exp_save_dir,'before');
 after_path=fullfile(ma.exp_save_dir,'after');
@@ -11,13 +11,12 @@ ma.mkdirs(after_path);
 %% Initialize Cam
 % cam_para.ROI=[200 150 120 150];
 
-cam_para.ROI=[200 180 240 180];
+% cam_para.ROI=[200 180 240 180];
 cam_para.exposure=1/60;
 cam_para.gain=0;
 cam_para.trigger_frames=3;
 cam_para.frame_rate = 30;
-cam_para.frame_delay = 0.01;
-cam_para.vidtype= 'Y16 (640x480)'; %'Y16 (752x480)';
+cam_para.vidtype='Y16 (1280x960)'; %'Y16 (752x480)';
 cam=ICCamera(cam_para);
 
 %% Initialize SLM 
@@ -29,7 +28,7 @@ slm_para.fresh_time=1/60;
 slm_para.pixel_size=8e-6;
 
 slm=HoloeyeSLM(slm_para);
-slm.blaze=slm.blazedgrating(1,0,4)/(2*pi)*255;
+slm.blaze=slm.blazedgrating(1,0,12);
 
 % Meadowlark
 % lib_dir = './utils/meadowlark_sdk/';
@@ -65,20 +64,22 @@ slm.disp_image(slm.init_image,0);
 % slm.disp_image(slm.init_image,1,1);
 % slm.clear_sdk();
 
-
+%% Selece ROI
+im=cam.capture();
+roi=cam.selectROI(im);
+cam.setROI(roi);
 %% Before Calibration
 grayVal=(0:255)'; 
 loaded_imgs=ModulatorUtil.generate_cali_images(slm.sz,grayVal,'mode','double','base',0);
-slm.disp_image(loaded_imgs{1},0);pause(1);
+slm.disp_image(loaded_imgs{1},1);pause(1);
 % cam.open();
 for i=1:length(loaded_imgs)
     savePath=fullfile(before_path,strcat(num2str(i-1),'.bmp'))                                                      ;
     disp(['(before) image: ',num2str(i-1)]);
-    slm.disp_image(loaded_imgs{i},0);
-    pause(0.1);
+    slm.disp_image(loaded_imgs{i},1);
+    pause(0.05);
     cam.capture(savePath);
 end
-cam.close();
 
 %% Phase Retrivel: pre-load
 % to determine x/y range uncomment the following
@@ -95,10 +96,10 @@ image(img,'CDataMapping','scaled');
 %     cap_imgs{i}=cap_imgs{i}';
 % end
 %% Phase Retrivel: compute
-xRange=105:129;
-yRange=89;
+xRange=108:134;
+yRange=98;
 y0=yRange(round(length(yRange)/2));
-startPoint=[0 0 0 0.95]; % use curve fitting tool to determine
+startPoint=[0 0 0 0.9]; % use curve fitting tool to determine
 
 phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,before_path);
 % save(fullfile(ma.exp_save_dir,'phase_shift_ori.mat'),'phases');
@@ -112,8 +113,8 @@ print(fullfile(before_path,'slm_cali_strip_curve'),'-dpng','-r400');
 %% For Gamma Fitting
 close all;
 gammabit=10;
-one_lambda_range=1:44;
-polytype='poly5';
+one_lambda_range=8:160;
+polytype='poly7';
 % lut_path=fullfile(ma.exp_save_dir,strcat(ma.exp_date,".lut"));%meadowlark
 lut_path=fullfile(ma.exp_save_dir,strcat(ma.exp_date,".csv"));%holoeye
 % lut_path='test.csv';
@@ -122,7 +123,7 @@ print(fullfile(after_path,'gamma_curve'),'-dpng','-r400');
 %% For Gray-Phase Fitting (not recommended)
 %     grayVal=grayVal(1:length(phases));
 grayVal=(0:255)'; 
-one_lambda_range=1:112;
+one_lambda_range=8:160;
 grayVal_cut=grayVal(one_lambda_range);
 phaseVal_cut=phaseVal(one_lambda_range);
 [xData, yData] = prepareCurveData( phaseVal_cut-phaseVal_cut(1), grayVal_cut );
@@ -131,14 +132,14 @@ ft = fittype( 'poly5' );
 [lut, res] = fit( xData, yData, ft ); % Note: polyfit 不如 fit 效果好
 disp(['fitting residual: ',num2str(res.rmse)]);
 
- slm.LUT=lut;
+slm.LUT=lut;
 save(fullfile(ma.exp_save_dir,'lut.cfit'),'lut');
 save(fullfile(ma.exp_save_dir,'phaseVal.mat'),'phaseVal');
 
 show_lut_result(grayVal_cut,phaseVal_cut-phaseVal_cut(1),lut,ma.exp_save_dir);
 
 
-%% 
+%% For Meadowlark SLM
 slm.clear_sdk();
 % lut_path=strcat('test.lut');
 % lut_path=strcat(lib_dir,'slm4633_at532.lut');
@@ -155,27 +156,31 @@ eval_phases=ModulatorUtil.generate_cali_images(slm.sz,phaseGT,'mode','double','b
 % cam.preview();
 % slm.disp_image(slm.init_image,1,1);
 % cam.open(); % Thorlabs
-slm.disp_phase(eval_phases{1},0);
+slm.disp_phase(eval_phases{1},1);
 pause(1);
 for i=1:length(eval_phases)
     savePath=fullfile(after_path,strcat(num2str(i-1),'.bmp'));
     disp(['(after) image: ',num2str(i-1)]);
-    slm.disp_phase(eval_phases{i},0);
+    slm.disp_phase(eval_phases{i},1);
     
     pause(0.06);
     cam.capture(savePath);
 end
-cam.close();
+
 
 %% Evaluation: compute
-close all;
+
+% startPoint=[1 0 0.6 0.5]; % use curve fitting tool to determine
 phaseIndex=0:length(eval_phases)-1;
 cap_imgs=ModulatorUtil.load_imgs(after_path,phaseIndex);
 % for i=1:length(cap_imgs)
 %     cap_imgs{i}=cap_imgs{i}';
 % end
 vidtype="avi";
-startPoint=[0 0 0 0.95];
+% xRange=113:139;
+% yRange=124;
+% y0=yRange(round(length(yRange)/2));
+% startPoint=[0 0 0 0.85];
 calibrated_phases=retrivePhase(cap_imgs,yRange,xRange,startPoint,after_path,vidtype);
 
 eval_cali_result(phaseGT',calibrated_phases,ma.exp_save_dir);

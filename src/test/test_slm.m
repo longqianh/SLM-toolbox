@@ -45,12 +45,6 @@ slm_para.bCppOrPython=false;
 slm=MeadowlarkHDMISLM(slm_para,lib_dir,lut_path);
 
 %% blazedgrating setup
-
-blaze=slm.blazedgrating(1,0,3)*1; % 220/255;
-slm.blaze=double(blaze);
-slm.disp_image(slm.init_image,1);
-
-%% image display
 blaze=slm.blazedgrating(1,0,6)*0.87;% 220/255;
 slm.blaze=double(blaze);
 slm.disp_image(slm.init_image,1);
@@ -63,7 +57,7 @@ theta = atan2(Y, X);
 phi = mod(m*theta,2*pi);
 % img=imread('../data/vortex_6_19.bmp');
 % slm.disp_image(img,1);
-phi=imresize(phi,0.7);
+phi=imresize(phi,1);
 % figure;imshow(phi,[])
 slm.disp_phase(phi,1);
 %% holography display 
